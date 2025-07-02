@@ -1,45 +1,50 @@
 const clientID = "web_" + parseInt(Math.random() * 100000, 10);
 const host = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
 const port = 8884;
-const path = "/mqtt"; // WAJIB untuk HiveMQ WebSocket
-
+const path = "/mqtt";
 const client = new Paho.Client(host, port, path, clientID);
 
 const options = {
   useSSL: true,
-  userName: "webclient_user",       // Ganti sesuai akun HiveMQ kamu
-  password: "Webpassword123",       // Ganti sesuai akun HiveMQ kamu
+  userName: "webclient_user",     // ganti sesuai akun HiveMQ
+  password: "Webpassword123",     // ganti sesuai akun HiveMQ
   onSuccess: onConnect,
   onFailure: function (e) {
     console.error("❌ Gagal konek:", e);
+    updateMQTTStatus("Gagal konek", false);
   }
 };
 
-console.log("🔧 Starting Paho MQTT client...");
+console.log("🔧 Starting MQTT client...");
 console.log("Broker:", host, "Port:", port, "Path:", path);
 
 client.connect(options);
 
-// Event: koneksi hilang
 client.onConnectionLost = function (response) {
   console.error("⚠️ Koneksi putus:", response.errorMessage);
+  updateMQTTStatus("Putus", false);
 };
 
-// Event: pesan masuk
 client.onMessageArrived = function (message) {
   console.log("📥 Pesan masuk:", message.destinationName, message.payloadString);
+
   if (message.destinationName === "lampu/status") {
-    document.getElementById("lamp-status").innerText = message.payloadString;
+    const statusEl = document.getElementById("lamp-status");
+    const timeEl = document.getElementById("last-updated");
+
+    statusEl.innerText = message.payloadString;
+
+    const now = new Date();
+    timeEl.innerText = now.toLocaleTimeString();
   }
 };
 
-// Callback saat konek berhasil
 function onConnect() {
   console.log("✅ Terhubung ke MQTT Broker");
+  updateMQTTStatus("Terhubung", true);
   client.subscribe("lampu/status");
 }
 
-// Kirim pesan ke topik
 function sendMessage(topic, msg) {
   console.log(`📤 Mengirim pesan ke "${topic}":`, msg);
   const message = new Paho.Message(msg);
@@ -47,7 +52,12 @@ function sendMessage(topic, msg) {
   client.send(message);
 }
 
-// Fungsi global agar bisa dipanggil dari HTML
+function updateMQTTStatus(text, isConnected) {
+  const el = document.getElementById("mqtt-status");
+  el.innerText = `🔌 MQTT: ${text}`;
+  el.className = "status-box " + (isConnected ? "connected" : "disconnected");
+}
+
 window.turnOn = function () {
   sendMessage("lampu/control", "ON");
 };
