@@ -81,3 +81,9 @@ window.setSchedule = function (event) {
   alert("✅ Jadwal dikirim: " + scheduleString);
 };
 
+function clearSchedule() {
+  if (confirm("Yakin ingin menghapus jadwal?")) {
+    sendMessage("smartlamp/schedule/lampu_1", "CLEAR");
+    alert("🗑️ Jadwal dihapus");
+  }
+}
