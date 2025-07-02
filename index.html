@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>YDC Smartlamp</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>💡 YDC Smartlamp</h1>
+
+  <div class="status">
+    Status: <span id="lamp-status">Unknown</span>
+  </div>
+
+  <div class="controls">
+    <button onclick="turnOn()">ON</button>
+    <button onclick="turnOff()">OFF</button>
+  </div>
+
+  <div class="schedule">
+    <h2>⏱ Jadwal Otomatis</h2>
+    <form onsubmit="setSchedule(event)">
+      <label>Jam:</label>
+      <input type="number" id="jam" min="0" max="23" required>
+      <label>Menit:</label>
+      <input type="number" id="menit" min="0" max="59" required>
+      <select id="action">
+        <option value="ON">ON</option>
+        <option value="OFF">OFF</option>
+      </select>
+      <button type="submit">Set</button>
+    </form>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
