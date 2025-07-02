@@ -1,40 +1,64 @@
 body {
   font-family: Arial, sans-serif;
   text-align: center;
-  margin-top: 30px;
-  background: #f5f5f5;
+  padding: 20px;
+  background-color: #f0f4f8;
 }
 
 h1 {
   color: #333;
 }
 
+.status-box {
+  padding: 10px 16px;
+  margin: 12px 0;
+  font-weight: bold;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.connected {
+  background-color: #28a745;
+  color: white;
+}
+
+.disconnected {
+  background-color: #dc3545;
+  color: white;
+}
+
 .status {
-  font-size: 18px;
-  margin: 10px 0;
+  font-size: 1.1em;
+  margin: 10px 0 20px;
+}
+
+#lamp-status {
+  font-weight: bold;
 }
 
 .controls button {
   padding: 10px 20px;
-  margin: 10px;
+  margin: 5px;
   font-size: 16px;
-  background-color: #4CAF50;
   border: none;
+  background-color: #007bff;
   color: white;
   border-radius: 5px;
+  cursor: pointer;
 }
 
-.controls button:nth-child(2) {
-  background-color: #f44336;
+.controls button:hover {
+  background-color: #0056b3;
 }
 
 .schedule {
   margin-top: 30px;
-  padding: 10px;
 }
 
 .schedule input,
-.schedule select {
-  padding: 5px;
-  margin: 5px;
+.schedule select,
+.schedule button {
+  padding: 6px;
+  margin: 4px;
+  font-size: 14px;
 }
