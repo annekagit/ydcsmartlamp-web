@@ -1,26 +1,26 @@
 const clientID = "web_" + parseInt(Math.random() * 100000, 10);
 const host = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
 const port = 8884;
-const path = "/mqtt";  // Penting!
-
-const client = new Paho.Client(host, port, clientID);
+const path = "/mqtt";   // wajib ada
+const client = new Paho.MQTT.Client(host, port, path, clientID);
 
 const options = {
   useSSL: true,
-  userName: "smartlamp",   // ganti sesuai HiveMQ
-  password: "smartlamp689",   // ganti sesuai HiveMQ
+  userName: "smartlamp",
+  password: "smartlamp689",
   onSuccess: onConnect,
   onFailure: function (e) {
-    console.log("Gagal konek:", e);
+    console.error("❌ Gagal konek:", e);
   }
 };
+
 console.log("🔧 Starting Paho MQTT client...");
-console.log("Broker:", host, "Port:", port);
+console.log("Broker:", host, "Port:", port, "Path:", path);
 
 client.connect(options);
 
 client.onConnectionLost = function (response) {
-  console.log("Koneksi putus: " + response.errorMessage);
+  console.error("❌ Koneksi putus:", response.errorMessage);
 };
 
 client.onMessageArrived = function (message) {
@@ -30,7 +30,7 @@ client.onMessageArrived = function (message) {
 };
 
 function onConnect() {
-  console.log("Terhubung ke MQTT Broker");
+  console.log("✅ Terhubung ke MQTT Broker");
   client.subscribe("lampu/status");
 }
 
@@ -40,13 +40,8 @@ function sendMessage(topic, msg) {
   client.send(message);
 }
 
-function turnOn() {
-  sendMessage("lampu/control", "ON");
-}
-
-function turnOff() {
-  sendMessage("lampu/control", "OFF");
-}
+function turnOn() { sendMessage("lampu/control", "ON"); }
+function turnOff() { sendMessage("lampu/control", "OFF"); }
 
 function setSchedule(event) {
   event.preventDefault();
@@ -55,5 +50,5 @@ function setSchedule(event) {
   const action = document.getElementById("action").value;
   const scheduleString = `${jam}:${menit}=${action}`;
   sendMessage("lampu/schedule", scheduleString);
-  alert("Jadwal dikirim: " + scheduleString);
+  alert("✅ Jadwal dikirim: " + scheduleString);
 }
