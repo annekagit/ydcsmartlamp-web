@@ -6,8 +6,8 @@ const client = new Paho.MQTT.Client(host, port, clientID);
 
 const options = {
   useSSL: true,
-  userName: "username_anda",   // ganti sesuai HiveMQ
-  password: "password_anda",   // ganti sesuai HiveMQ
+  userName: "smartlamp",   // ganti sesuai HiveMQ
+  password: "smartlamp689",   // ganti sesuai HiveMQ
   onSuccess: onConnect,
   onFailure: function (e) {
     console.log("Gagal konek:", e);
