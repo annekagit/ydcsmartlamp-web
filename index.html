@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <title>YDC Smartlamp</title>
-  
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>💡 YDC Smartlamp</h1>
 
+  <div id="mqtt-status" class="status-box">🔌 MQTT: Menghubungkan...</div>
+
   <div class="status">
-    Status: <span id="lamp-status">Unknown</span>
+    Status Lampu: <span id="lamp-status">Unknown</span><br>
+    Terakhir diperbarui: <span id="last-updated">-</span>
   </div>
 
   <div class="controls">
@@ -32,7 +34,8 @@
       <button type="submit">Set</button>
     </form>
   </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.1.0/mqttws31.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
