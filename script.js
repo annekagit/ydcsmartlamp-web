@@ -2,7 +2,7 @@ const clientID = "web_" + parseInt(Math.random() * 100000, 10);
 const host = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
 const port = 8884;
 const path = "/mqtt";   // wajib ada
-const client = new Paho.Client(host, port, path, clientID);
+const client = new Paho.MQTT.Client(host, port, path, clientID);
 
 const options = {
   useSSL: true,
@@ -35,7 +35,7 @@ function onConnect() {
 }
 
 function sendMessage(topic, msg) {
-  const message = new Paho.Message(msg);
+  const message = new Paho.MQTT.Message(msg);
   message.destinationName = topic;
   client.send(message);
 }
