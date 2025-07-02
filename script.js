@@ -13,6 +13,8 @@ const options = {
     console.log("Gagal konek:", e);
   }
 };
+console.log("🔧 Starting Paho MQTT client...");
+console.log("Broker:", host, "Port:", port);
 
 client.connect(options);
 
