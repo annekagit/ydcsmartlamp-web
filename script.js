@@ -52,6 +52,17 @@ function updateMQTTStatus(text, isConnected) {
   el.className = "status-box " + (isConnected ? "connected" : "disconnected");
 }
 
+function updateClock() {
+  const now = new Date();
+  const hh = now.getHours().toString().padStart(2, '0');
+  const mm = now.getMinutes().toString().padStart(2, '0');
+  const ss = now.getSeconds().toString().padStart(2, '0');
+  document.getElementById("clock").innerText = `${hh}:${mm}:${ss}`;
+}
+
+setInterval(updateClock, 1000);
+updateClock(); // inisialisasi awal
+
 window.turnOn = function () {
   sendMessage("smartlamp/commands/lampu_1", "ON");
 };
@@ -69,3 +80,4 @@ window.setSchedule = function (event) {
   sendMessage("smartlamp/schedule/lampu_1", scheduleString);
   alert("✅ Jadwal dikirim: " + scheduleString);
 };
+
