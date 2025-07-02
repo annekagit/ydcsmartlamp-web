@@ -7,7 +7,7 @@ const client = new Paho.MQTT.Client(host, port, path, clientID);
 const options = {
   useSSL: true,
   userName: "webclient_user",
-  password: "webpassword123",
+  password: "Webpassword123",
   onSuccess: onConnect,
   onFailure: function (e) {
     console.error("❌ Gagal konek:", e);
