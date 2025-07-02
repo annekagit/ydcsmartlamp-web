@@ -35,7 +35,7 @@ function onConnect() {
 }
 
 function sendMessage(topic, msg) {
-  const message = new Paho.MQTT.Message(msg);
+  const message = new Paho.Message(msg);
   message.destinationName = topic;
   client.send(message);
 }
