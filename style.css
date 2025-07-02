@@ -27,6 +27,12 @@ h1 {
   color: white;
 }
 
+.clock {
+  font-size: 1.2em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
 .status {
   font-size: 1.1em;
   margin: 10px 0 20px;
