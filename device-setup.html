@@ -12,7 +12,11 @@
       margin: 0;
       color: #333;
     }
-    h1 { color: #0066cc; }
+
+    h1 {
+      color: #0066cc;
+    }
+
     label, input, button {
       display: block;
       width: 100%;
@@ -20,24 +24,36 @@
       margin-top: 1rem;
       font-size: 1rem;
     }
+
     input, button {
       padding: 0.6rem;
       border-radius: 5px;
     }
-    input { border: 1px solid #ccc; }
+
+    input {
+      border: 1px solid #ccc;
+    }
+
     button {
       background-color: #0066cc;
       color: white;
       border: none;
       cursor: pointer;
     }
-    button:hover { background-color: #005bb5; }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
     #status {
       margin-top: 1rem;
       font-weight: bold;
     }
+
     @media (max-width: 500px) {
-      body { padding: 1rem; }
+      body {
+        padding: 1rem;
+      }
     }
   </style>
 
@@ -45,6 +61,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -61,53 +79,48 @@
   <div id="status"></div>
 
   <script>
-    let currentUser = null;
-
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
         window.location.href = "login.html";
         return;
       }
-      currentUser = user;
-    });
 
-    document.getElementById("submit").addEventListener("click", () => {
-      if (!currentUser) return;
+      document.getElementById("submit").addEventListener("click", () => {
+        const deviceID = document.getElementById("device-id").value.trim();
+        const deviceName = document.getElementById("device-name").value.trim();
 
-      const deviceID = document.getElementById("device-id").value.trim();
-      const deviceName = document.getElementById("device-name").value.trim();
+        if (!deviceID || !deviceName) {
+          showStatus("❌ ID dan Nama harus diisi.", false);
+          return;
+        }
 
-      if (!deviceID || !deviceName) {
-        showStatus("❌ ID dan Nama harus diisi", false);
-        return;
-      }
+        const db = firebase.database().ref("devices");
+        db.once("value").then(snapshot => {
+          let idSudahAda = false;
 
-      const db = firebase.database().ref("devices");
-      db.once("value").then(snapshot => {
-        let idSudahAda = false;
+          snapshot.forEach(userSnap => {
+            if (userSnap.hasChild(deviceID)) {
+              idSudahAda = true;
+            }
+          });
 
-        snapshot.forEach(userSnap => {
-          if (userSnap.hasChild(deviceID)) {
-            idSudahAda = true;
+          if (idSudahAda) {
+            showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
+          } else {
+            const ref = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
+            ref.set({ name: deviceName })
+              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
           }
         });
-
-        if (idSudahAda) {
-          showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
-        } else {
-          const ref = firebase.database().ref(`devices/${currentUser.uid}/${deviceID}`);
-          ref.set({ name: deviceName })
-            .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
-            .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
-        }
       });
-    });
 
-    function showStatus(msg, success) {
-      const el = document.getElementById("status");
-      el.innerText = msg;
-      el.style.color = success ? "green" : "red";
-    }
+      function showStatus(msg, success) {
+        const el = document.getElementById("status");
+        el.innerText = msg;
+        el.style.color = success ? "green" : "red";
+      }
+    });
   </script>
 </body>
 </html>
