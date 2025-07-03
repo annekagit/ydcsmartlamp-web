@@ -1,97 +1,105 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>Setup Perangkat - YDC Smartlamp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #d0e6ff, #f3faff);
+      background: #f2f2f2;
       padding: 2rem;
       margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
+      color: #333;
     }
     h1 {
-      color: #0077cc;
-      margin-bottom: 1rem;
-      text-align: center;
+      color: #0066cc;
     }
-    label {
-      font-weight: bold;
-      margin-top: 1rem;
+    label, input, button {
       display: block;
+      width: 100%;
+      max-width: 400px;
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+    input, button {
+      padding: 0.6rem;
+      border-radius: 5px;
     }
     input {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.25rem;
       border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
     }
     button {
-      background-color: #0077cc;
+      background-color: #0066cc;
       color: white;
-      padding: 0.75rem;
-      margin-top: 1.5rem;
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
       cursor: pointer;
-      width: 100%;
-      transition: background-color 0.2s;
     }
     button:hover {
-      background-color: #005fa3;
+      background-color: #005bb5;
     }
     #status {
       margin-top: 1rem;
-      text-align: center;
       font-weight: bold;
     }
-
-    @media (max-width: 480px) {
-      .container {
-        padding: 1.5rem;
+    @media (max-width: 500px) {
+      body {
+        padding: 1rem;
       }
     }
   </style>
 
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 
-  <!-- Konfigurasi Firebase -->
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
-
-  <!-- Script Setup -->
-  <script src="setup.js" defer></script>
 </head>
 <body>
-  <div class="container">
-    <h1>🔧 Tambah Perangkat</h1>
+  <h1>🔧 Tambah Perangkat</h1>
 
-    <label for="device-id">Device ID (cth: abc123):</label>
-    <input type="text" id="device-id" placeholder="Masukkan Device ID">
+  <label for="device-id">Device ID (cth: abc123):</label>
+  <input type="text" id="device-id" placeholder="Masukkan Device ID" required>
 
-    <label for="device-name">Nama Perangkat:</label>
-    <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
+  <label for="device-name">Nama Perangkat:</label>
+  <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar" required>
 
-    <button id="submit">➕ Simpan Perangkat</button>
+  <button id="submit">➕ Simpan Perangkat</button>
 
-    <div id="status"></div>
-  </div>
+  <div id="status"></div>
+
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("submit").addEventListener("click", () => {
+        const id = document.getElementById("device-id").value.trim();
+        const name = document.getElementById("device-name").value.trim();
+        const statusDiv = document.getElementById("status");
+
+        if (!id || !name) {
+          statusDiv.textContent = "⚠️ Harap isi kedua kolom.";
+          return;
+        }
+
+        const db = firebase.database();
+        const deviceRef = db.ref("devices/" + user.uid + "/" + id);
+        deviceRef.set({ name })
+          .then(() => {
+            statusDiv.textContent = "✅ Perangkat berhasil ditambahkan.";
+            document.getElementById("device-id").value = "";
+            document.getElementById("device-name").value = "";
+          })
+          .catch(err => {
+            statusDiv.textContent = "❌ Gagal menyimpan: " + err.message;
+          });
+      });
+    });
+  </script>
 </body>
 </html>
