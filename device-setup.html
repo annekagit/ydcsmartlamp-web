@@ -3,80 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <title>Setup Perangkat - YDC Smartlamp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f2f2f2;
+      background: linear-gradient(135deg, #d0e6ff, #f3faff);
       padding: 2rem;
       margin: 0;
-      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-
-    h1 {
-      color: #0066cc;
-    }
-
-    label, input, button {
-      display: block;
-      width: 100%;
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      color: #0077cc;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
       margin-top: 1rem;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
       font-size: 1rem;
     }
-
-    input, button {
-      padding: 0.6rem;
-      border-radius: 5px;
-    }
-
-    input {
-      border: 1px solid #ccc;
-    }
-
     button {
-      background-color: #0066cc;
+      background-color: #0077cc;
       color: white;
+      padding: 0.75rem;
+      margin-top: 1.5rem;
       border: none;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s;
     }
-
     button:hover {
-      background-color: #005bb5;
+      background-color: #005fa3;
     }
-
     #status {
       margin-top: 1rem;
+      text-align: center;
       font-weight: bold;
-    }
-
-    @media (max-width: 500px) {
-      body {
-        padding: 1rem;
-      }
     }
   </style>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-
-  <!-- Firebase Config -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h1>🔧 Tambah Perangkat</h1>
+  <div class="container">
+    <h1>🔧 Tambah Perangkat</h1>
 
-  <label for="device-id">Device ID (cth: abc123):</label>
-  <input type="text" id="device-id" placeholder="Masukkan Device ID" required>
+    <label for="device-id">Device ID (cth: abc123):</label>
+    <input type="text" id="device-id" placeholder="Masukkan Device ID">
 
-  <label for="device-name">Nama Perangkat:</label>
-  <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar" required>
+    <label for="device-name">Nama Perangkat:</label>
+    <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
 
-  <button id="submit">➕ Simpan Perangkat</button>
+    <button id="submit">➕ Simpan Perangkat</button>
 
-  <div id="status"></div>
+    <div id="status"></div>
+  </div>
 
   <script>
     firebase.auth().onAuthStateChanged(user => {
@@ -90,35 +96,42 @@
         const deviceName = document.getElementById("device-name").value.trim();
 
         if (!deviceID || !deviceName) {
-          showStatus("❌ ID dan Nama harus diisi.", false);
+          showStatus("❌ Device ID dan Nama harus diisi.", false);
           return;
         }
 
-        const db = firebase.database().ref("devices");
-        db.once("value").then(snapshot => {
-          let idSudahAda = false;
+        const devicesRef = firebase.database().ref("devices");
 
+        // Periksa apakah ID sudah digunakan pengguna lain
+        devicesRef.once("value").then(snapshot => {
+          let digunakan = false;
           snapshot.forEach(userSnap => {
-            if (userSnap.hasChild(deviceID)) {
-              idSudahAda = true;
+            if (userSnap.hasChild(deviceID) && userSnap.key !== user.uid) {
+              digunakan = true;
             }
           });
 
-          if (idSudahAda) {
-            showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
-          } else {
-            const ref = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
-            ref.set({ name: deviceName })
-              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
-              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
+          if (digunakan) {
+            showStatus("⚠️ Device ID sudah digunakan oleh akun lain.", false);
+            return;
           }
+
+          // Simpan ke UID pengguna saat ini
+          const userRef = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
+          userRef.set({ name: deviceName })
+            .then(() => {
+              showStatus("✅ Perangkat berhasil ditambahkan.", true);
+              document.getElementById("device-id").value = "";
+              document.getElementById("device-name").value = "";
+            })
+            .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
         });
       });
 
-      function showStatus(msg, success) {
+      function showStatus(msg, sukses) {
         const el = document.getElementById("status");
         el.innerText = msg;
-        el.style.color = success ? "green" : "red";
+        el.style.color = sukses ? "green" : "red";
       }
     });
   </script>
