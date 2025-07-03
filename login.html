@@ -1,99 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
   <title>Login - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background: linear-gradient(135deg, #5ee7df, #b490ca);
-      color: #fff;
-      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #dbeeff, #ffffff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    h1 { margin-bottom: 2rem; }
-    input, button {
-      display: block;
-      margin: 0.5rem auto;
-      padding: 0.75rem;
-      width: 90%;
-      max-width: 300px;
-      border-radius: 5px;
-      border: none;
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 {
+      text-align: center;
+      color: #0077cc;
+    }
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
     button {
-      background: #fff;
-      color: #333;
-      font-weight: bold;
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 1.2rem;
+      background-color: #0077cc;
+      color: white;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
     }
-    button.google {
+    button:hover {
+      background-color: #005fa3;
+    }
+    .google-btn {
+      background-color: #ffffff;
+      color: #333;
+      border: 1px solid #ccc;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
     }
-    button.google img {
-      width: 20px;
+    .google-btn img {
+      height: 20px;
+      margin-right: 10px;
     }
-    a {
-      color: #fff;
-      text-decoration: underline;
+    .status {
+      text-align: center;
       margin-top: 1rem;
-      display: inline-block;
+      font-weight: bold;
+    }
+    .link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .link a {
+      color: #0077cc;
+      text-decoration: none;
     }
   </style>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <h1>🔐 Login ke YDC Smartlamp</h1>
-
-  <!-- Login Manual -->
-  <input type="email" id="email" placeholder="Email" />
-  <input type="password" id="password" placeholder="Password" />
-  <button onclick="loginManual()">Login</button>
-
-  <!-- OR -->
-  <p>atau</p>
-
-  <!-- Login Google -->
-  <button class="google" onclick="loginWithGoogle()">
-    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-    Login dengan Google
-  </button>
-
-  <a href="register.html">Daftar</a>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="firebase-config.js"></script>
+  <div class="container">
+    <h1>Login</h1>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="loginManual()">🔐 Login</button>
+    <button class="google-btn" onclick="loginGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+      Login dengan Google
+    </button>
+    <div class="status" id="status"></div>
+    <div class="link">
+      Belum punya akun? <a href="register.html">Daftar</a>
+    </div>
+  </div>
 
   <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
+
     function loginManual() {
       const email = document.getElementById("email").value;
       const password = document.getElementById("password").value;
+      const status = document.getElementById("status");
 
-      if (!email || !pass) {
-    alert("⚠️ Mohon isi email dan password terlebih dahulu.");
-    return;
-  }
+      if (!email || !password) {
+        status.innerText = "❗ Email dan password wajib diisi.";
+        status.style.color = "red";
+        return;
+      }
+
       firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(user => {
-          window.location.href = "index.html";
-        })
+        .then(() => window.location.href = "index.html")
         .catch(err => {
-          alert("Gagal login: " + err.message);
+          status.innerText = "❌ " + err.message;
+          status.style.color = "red";
         });
     }
 
-    function loginWithGoogle() {
+    function loginGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider)
-        .then(result => {
-          window.location.href = "index.html";
-        })
-        .catch(error => {
-          alert("Gagal login Google: " + error.message);
+        .then(() => window.location.href = "index.html")
+        .catch(err => {
+          document.getElementById("status").innerText = "⚠️ Gagal login Google: " + err.message;
+          document.getElementById("status").style.color = "red";
         });
     }
   </script>
