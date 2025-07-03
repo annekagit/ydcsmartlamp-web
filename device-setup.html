@@ -2,72 +2,33 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Setup Perangkat</title>
+  <title>Setup Perangkat - YDC Smartlamp</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; }
-    input, button { padding: 0.5rem; margin-top: 0.5rem; display: block; }
-    ul { margin-top: 2rem; }
-    li { margin-bottom: 0.5rem; }
+    input, button { display: block; margin: 1rem 0; padding: 0.5rem; width: 100%; max-width: 300px; }
   </style>
-</head>
-<body>
-  <h1>➕ Tambah Perangkat</h1>
 
-  <label>Device ID (3 huruf + 3 angka):</label>
-  <input type="text" id="device-id" placeholder="Contoh: abc123" maxlength="6" required>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 
-  <label>Nama Perangkat:</label>
-  <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar" required>
-
-  <button onclick="addDevice()">Simpan Perangkat</button>
-
-  <h3>📋 Daftar Perangkat</h3>
-  <ul id="device-list"></ul>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Konfigurasi Firebase -->
   <script src="firebase-config.js"></script>
 
-  <script>
-    const db = firebase.database();
-
-    function loadDevices() {
-      db.ref("devices").once("value", snapshot => {
-        const list = document.getElementById("device-list");
-        list.innerHTML = "";
-        snapshot.forEach(child => {
-          const data = child.val();
-          const li = document.createElement("li");
-          li.textContent = `${child.key} → ${data.name}`;
-          list.appendChild(li);
-        });
-      });
-    }
-
-    function addDevice() {
-      const id = document.getElementById("device-id").value.trim();
-      const name = document.getElementById("device-name").value.trim();
-
-      if (!/^[a-zA-Z]{3}\d{3}$/.test(id)) {
-        alert("❗ Format ID tidak valid. Harus 3 huruf + 3 angka.");
-        return;
-      }
-      if (!name) {
-        alert("❗ Nama perangkat tidak boleh kosong.");
-        return;
-      }
-
-      db.ref("devices/" + id).set({ name }).then(() => {
-        alert("✅ Perangkat disimpan.");
-        document.getElementById("device-id").value = "";
-        document.getElementById("device-name").value = "";
-        loadDevices();
-      });
-    }
-
-    loadDevices();
-  </script>
+  <!-- Script Setup -->
   <script src="setup.js" defer></script>
+</head>
+<body>
+  <h1>🔧 Tambah Perangkat</h1>
+
+  <label for="device-id">Device ID (cth: abc123):</label>
+  <input type="text" id="device-id" placeholder="Masukkan Device ID">
+
+  <label for="device-name">Nama Perangkat:</label>
+  <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
+
+  <button id="submit">➕ Simpan Perangkat</button>
+
+  <div id="status"></div>
 </body>
 </html>
