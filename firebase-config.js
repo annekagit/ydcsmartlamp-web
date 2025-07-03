@@ -1,4 +1,4 @@
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyA2HxtkO8q5vHaBMtRjPW31K80rBfxXx4c",
   authDomain: "ydc-smartlamp-f4ef1.firebaseapp.com",
   databaseURL: "https://ydc-smartlamp-f4ef1-default-rtdb.asia-southeast1.firebasedatabase.app",
