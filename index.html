@@ -1,154 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>YDC Smartlamp - Firebase</title>
-  <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    select, button, input { padding: 0.5rem; margin-top: 0.5rem; display: block; }
-    .device-section { margin-top: 2rem; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YDC Smartlamp</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/paho-mqtt@1.1.0/paho-mqtt.min.js"></script>
 </head>
 <body>
-  <h1>💡 YDC Smartlamp (Firebase)</h1>
+  <header>
+    <h1>💡 YDC Smartlamp Multi-Device</h1>
+    <div id="clock">🕒 --:--:--</div>
+  </header>
 
-  <label for="device-select">Pilih Perangkat:</label>
-  <select id="device-select" onchange="onDeviceChange()">
-    <option value="">-- Pilih --</option>
-  </select>
-  <button onclick="removeDevice()">🗑 Hapus Perangkat</button>
-  <button onclick="editDeviceName()">✏️ Edit Nama Perangkat</button>
+  <main>
+    <label for="device-select">🔽 Pilih Perangkat:</label>
+    <select id="device-select" onchange="onDeviceChange()">
+      <option value="">-- Pilih --</option>
+    </select>
+    <div class="device-controls">
+      <button onclick="removeDevice()">🗑 Hapus</button>
+      <button onclick="editDeviceName()">✏️ Edit Nama</button>
+    </div>
 
-  <div class="device-section" id="control-section" style="display:none">
-    <div>Status: <span id="lamp-status">Unknown</span></div>
-    <button onclick="turnOn()">ON</button>
-    <button onclick="turnOff()">OFF</button>
+    <section id="control-section" class="hidden">
+      <h2>Kontrol Lampu</h2>
+      <div class="status">Status: <span id="lamp-status">Unknown</span></div>
+      <button class="on" onclick="turnOn()">ON</button>
+      <button class="off" onclick="turnOff()">OFF</button>
 
-    <h3>⏱ Jadwal</h3>
-    <form onsubmit="setSchedule(event)">
-      <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
-      <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
-      <select id="action">
-        <option value="ON">ON</option>
-        <option value="OFF">OFF</option>
-      </select>
-      <button type="submit">Set Jadwal</button>
-    </form>
-  </div>
+      <h3>⏱ Atur Jadwal</h3>
+      <form onsubmit="setSchedule(event)">
+        <input type="number" id="jam" min="0" max="23" placeholder="Jam" required />
+        <input type="number" id="menit" min="0" max="59" placeholder="Menit" required />
+        <select id="action">
+          <option value="ON">ON</option>
+          <option value="OFF">OFF</option>
+        </select>
+        <button type="submit">➕ Set Jadwal</button>
+      </form>
+    </section>
+  </main>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-  <!-- MQTT Client -->
-  <script src="https://cdn.jsdelivr.net/npm/paho-mqtt@1.1.0/paho-mqtt.min.js"></script>
-  <!-- Firebase Config -->
-  <script src="firebase-config.js"></script>
-
+  <script src="script.js" defer></script>
   <script>
-    const host = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
-    const port = 8884;
-    const path = "/mqtt";
-    const user = "webclient_user";
-    const pass = "Webpassword123";
-    const clientID = "web_" + Math.floor(Math.random() * 100000);
-
-    const client = new Paho.Client(host, port, path, clientID);
-    let selectedDevice = null;
-
-    client.connect({
-      useSSL: true,
-      userName: user,
-      password: pass,
-      onSuccess: () => {
-        console.log("✅ Terhubung ke MQTT");
-        loadDevices(); // Ambil dari Firebase
-      },
-      onFailure: e => console.error("❌ Gagal konek MQTT", e)
-    });
-
-    client.onMessageArrived = message => {
-      if (!selectedDevice) return;
-      const expected = `smartlamp/status/${selectedDevice}`;
-      if (message.destinationName === expected) {
-        document.getElementById("lamp-status").innerText = message.payloadString;
-      }
-    };
-
-    function loadDevices() {
-      const db = firebase.database();
-      const ref = db.ref("devices");
-      ref.once("value").then(snapshot => {
-        const select = document.getElementById("device-select");
-        select.innerHTML = '<option value="">-- Pilih --</option>';
-        snapshot.forEach(child => {
-          const device = child.val();
-          const option = document.createElement("option");
-          option.value = child.key;
-          option.text = device.name;
-          select.appendChild(option);
-        });
-      });
-    }
-
-    function onDeviceChange() {
-      selectedDevice = document.getElementById("device-select").value;
-      if (!selectedDevice) {
-        document.getElementById("control-section").style.display = "none";
-        return;
-      }
-      document.getElementById("control-section").style.display = "block";
-      client.subscribe(`smartlamp/status/${selectedDevice}`);
-    }
-
-    function sendMessage(topic, msg) {
-      if (!selectedDevice) return;
-      const fullTopic = `smartlamp/${topic}/${selectedDevice}`;
-      const message = new Paho.Message(msg);
-      message.destinationName = fullTopic;
-      client.send(message);
-      console.log("MQTT >>", fullTopic, msg);
-    }
-
-    function turnOn() { sendMessage("commands", "ON"); }
-    function turnOff() { sendMessage("commands", "OFF"); }
-
-    function setSchedule(e) {
-      e.preventDefault();
-      const jam = document.getElementById("jam").value.padStart(2, "0");
-      const menit = document.getElementById("menit").value.padStart(2, "0");
-      const action = document.getElementById("action").value;
-      const msg = `${jam}:${menit}=${action}`;
-      sendMessage("schedule", msg);
-      alert("⏱ Jadwal dikirim: " + msg);
-    }
-
-    function removeDevice() {
-      const id = document.getElementById("device-select").value;
-      if (!id || !confirm("Yakin hapus perangkat ini?")) return;
-      firebase.database().ref("devices/" + id).remove().then(() => {
-        loadDevices();
-        selectedDevice = null;
-        document.getElementById("control-section").style.display = "none";
-        alert("🗑 Perangkat dihapus.");
-      });
-    }
-
-    function editDeviceName() {
-      const id = document.getElementById("device-select").value;
-      if (!id) return;
-      const ref = firebase.database().ref("devices/" + id);
-      ref.once("value").then(snap => {
-        const currentName = snap.val().name;
-        const newName = prompt("Nama baru:", currentName);
-        if (newName && newName.trim()) {
-          ref.update({ name: newName.trim() }).then(() => {
-            loadDevices();
-            document.getElementById("device-select").value = id;
-            alert("✏️ Nama diperbarui.");
-          });
-        }
-      });
-    }
+    // Jam realtime
+    setInterval(() => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID');
+      document.getElementById("clock").innerText = `🕒 ${timeStr}`;
+    }, 1000);
   </script>
 </body>
 </html>
