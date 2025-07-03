@@ -48,16 +48,18 @@
       cursor: pointer;
     }
     .google-btn {
-      background: #fff;
-      color: #444;
-      font-weight: bold;
-      border: 1px solid #ccc;
-    }
-    #status {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #ffdede;
-    }
+  background: #fff;
+  color: #444;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.google-btn img {
+  background: none;
+}
   </style>
 
   <!-- Firebase SDK -->
@@ -73,7 +75,10 @@
     <button onclick="login()">Masuk</button>
 
     <hr style="margin: 1.5rem 0; border-color: #ddd;" />
-    <button class="google-btn" onclick="googleLogin()">🔓 Login dengan Google</button>
+    <button class="google-btn" onclick="googleLogin()">
+  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="height:20px; vertical-align:middle; margin-right:8px;">
+  Login dengan Google
+</button>
 
     <div id="status"></div>
   </div>
