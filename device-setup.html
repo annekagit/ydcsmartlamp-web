@@ -1,16 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <title>Setup Perangkat - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    input, button { display: block; margin: 1rem 0; padding: 0.5rem; width: 100%; max-width: 300px; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #d0e6ff, #f3faff);
+      padding: 2rem;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      color: #0077cc;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+      margin-top: 1rem;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      padding: 0.75rem;
+      margin-top: 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      width: 100%;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    #status {
+      margin-top: 1rem;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+    }
   </style>
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <!-- Konfigurasi Firebase -->
   <script src="firebase-config.js"></script>
@@ -19,16 +80,18 @@
   <script src="setup.js" defer></script>
 </head>
 <body>
-  <h1>🔧 Tambah Perangkat</h1>
+  <div class="container">
+    <h1>🔧 Tambah Perangkat</h1>
 
-  <label for="device-id">Device ID (cth: abc123):</label>
-  <input type="text" id="device-id" placeholder="Masukkan Device ID">
+    <label for="device-id">Device ID (cth: abc123):</label>
+    <input type="text" id="device-id" placeholder="Masukkan Device ID">
 
-  <label for="device-name">Nama Perangkat:</label>
-  <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
+    <label for="device-name">Nama Perangkat:</label>
+    <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
 
-  <button id="submit">➕ Simpan Perangkat</button>
+    <button id="submit">➕ Simpan Perangkat</button>
 
-  <div id="status"></div>
+    <div id="status"></div>
+  </div>
 </body>
 </html>
