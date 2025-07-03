@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <title>Setup Perangkat - YDC Smartlamp</title>
@@ -61,12 +61,20 @@
       text-align: center;
       font-weight: bold;
     }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+    }
   </style>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Konfigurasi Firebase -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -94,45 +102,43 @@
       document.getElementById("submit").addEventListener("click", () => {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
+        const statusEl = document.getElementById("status");
 
         if (!deviceID || !deviceName) {
-          showStatus("❌ Device ID dan Nama harus diisi.", false);
+          statusEl.innerText = "❌ Device ID dan Nama harus diisi.";
+          statusEl.style.color = "red";
           return;
         }
 
-        const devicesRef = firebase.database().ref("devices");
+        const db = firebase.database().ref("devices");
 
-        // Periksa apakah ID sudah digunakan pengguna lain
-        devicesRef.once("value").then(snapshot => {
-          let digunakan = false;
+        db.once("value").then(snapshot => {
+          let idUsed = false;
+
           snapshot.forEach(userSnap => {
-            if (userSnap.hasChild(deviceID) && userSnap.key !== user.uid) {
-              digunakan = true;
+            if (userSnap.hasChild(deviceID)) {
+              idUsed = true;
             }
           });
 
-          if (digunakan) {
-            showStatus("⚠️ Device ID sudah digunakan oleh akun lain.", false);
-            return;
+          if (idUsed) {
+            statusEl.innerText = "⚠️ Device ID sudah digunakan oleh pengguna lain.";
+            statusEl.style.color = "red";
+          } else {
+            const deviceRef = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
+            deviceRef.set({ name: deviceName })
+              .then(() => {
+                statusEl.innerText = "✅ Perangkat berhasil ditambahkan.";
+                statusEl.style.color = "green";
+                setTimeout(() => window.location.href = "index.html", 1500);
+              })
+              .catch(err => {
+                statusEl.innerText = "❌ Gagal menyimpan: " + err.message;
+                statusEl.style.color = "red";
+              });
           }
-
-          // Simpan ke UID pengguna saat ini
-          const userRef = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
-          userRef.set({ name: deviceName })
-            .then(() => {
-              showStatus("✅ Perangkat berhasil ditambahkan.", true);
-              document.getElementById("device-id").value = "";
-              document.getElementById("device-name").value = "";
-            })
-            .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
         });
       });
-
-      function showStatus(msg, sukses) {
-        const el = document.getElementById("status");
-        el.innerText = msg;
-        el.style.color = sukses ? "green" : "red";
-      }
     });
   </script>
 </body>
