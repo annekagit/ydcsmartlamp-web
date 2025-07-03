@@ -1,7 +1,7 @@
-// auth.js
-firebase.auth().onAuthStateChanged(function(user) {
+firebase.auth().onAuthStateChanged(user => {
   if (!user) {
-    // Redirect ke login jika belum login
+    // Jika belum login, arahkan ke halaman login
     window.location.href = "login.html";
   }
 });
+
