@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Tambah Perangkat</title></head>
+<body>
+  <h2>Tambah Device ID</h2>
+  <form onsubmit="addDevice(event)">
+    <input type="text" id="device-id" placeholder="Contoh: abc123" required>
+    <input type="text" id="device-name" placeholder="Nama Perangkat" required>
+    <button type="submit">Tambah</button>
+  </form>
+  <script src="firebase-config.js"></script>
+  <script>
+    function addDevice(e) {
+      e.preventDefault();
+      const id = document.getElementById('device-id').value.trim();
+      const name = document.getElementById('device-name').value.trim();
+      firebase.database().ref("devices/" + id).set({ name });
+      alert("✅ Perangkat disimpan");
+    }
+  </script>
+</body>
+</html>
