@@ -1,89 +1,94 @@
-const clientID = "web_" + Math.floor(Math.random() * 100000);
 const host = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
 const port = 8884;
 const path = "/mqtt";
+const user = "webclient_user";
+const pass = "Webpassword123";
+const clientID = "web_" + Math.floor(Math.random() * 100000);
 
+let selectedDevice = null;
 const client = new Paho.Client(host, port, path, clientID);
 
-const options = {
+client.connect({
   useSSL: true,
-  userName: "webclient_user",
-  password: "Webpassword123",
-  onSuccess: onConnect,
-  onFailure: (e) => {
-    console.error("❌ Gagal konek:", e);
-    updateMQTTStatus("Gagal konek", false);
-  }
-};
+  userName: user,
+  password: pass,
+  onSuccess: () => {
+    console.log("✅ Terhubung ke MQTT");
+    loadDevices();
+  },
+  onFailure: e => console.error("❌ Gagal konek", e)
+});
 
-console.log("🔧 Memulai koneksi MQTT...");
-client.connect(options);
-
-client.onConnectionLost = function (response) {
-  console.error("⚠️ Koneksi MQTT putus:", response.errorMessage);
-  updateMQTTStatus("Putus", false);
-};
-
-client.onMessageArrived = function (message) {
-  console.log("📥 Pesan masuk:", message.destinationName, message.payloadString);
-
-  if (message.destinationName === "smartlamp/status/lampu_1") {
+client.onMessageArrived = message => {
+  if (!selectedDevice) return;
+  const expectedTopic = `smartlamp/status/${selectedDevice}`;
+  if (message.destinationName === expectedTopic) {
     document.getElementById("lamp-status").innerText = message.payloadString;
-    document.getElementById("last-updated").innerText = new Date().toLocaleTimeString();
   }
 };
 
-function onConnect() {
-  console.log("✅ MQTT Terhubung");
-  updateMQTTStatus("Terhubung", true);
-  client.subscribe("smartlamp/status/lampu_1");
+function loadDevices() {
+  firebase.database().ref("devices").once("value", snap => {
+    const select = document.getElementById("device-select");
+    select.innerHTML = '<option value="">-- Pilih --</option>';
+    snap.forEach(child => {
+      const id = child.key;
+      const name = child.val().name;
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.text = name;
+      select.appendChild(opt);
+    });
+  });
+}
+
+function onDeviceChange() {
+  selectedDevice = document.getElementById("device-select").value;
+  document.getElementById("control-section").style.display = selectedDevice ? "block" : "none";
+  if (selectedDevice) {
+    client.subscribe(`smartlamp/status/${selectedDevice}`);
+  }
 }
 
 function sendMessage(topic, msg) {
-  console.log(`📤 Kirim ke ${topic}:`, msg);
+  if (!selectedDevice) return;
   const message = new Paho.Message(msg);
-  message.destinationName = topic;
+  message.destinationName = `smartlamp/${topic}/${selectedDevice}`;
   client.send(message);
+  console.log("Kirim:", message.destinationName, msg);
 }
 
-function updateMQTTStatus(text, isConnected) {
-  const el = document.getElementById("mqtt-status");
-  el.innerText = `🔌 MQTT: ${text}`;
-  el.className = "status-box " + (isConnected ? "connected" : "disconnected");
-}
+function turnOn() { sendMessage("commands", "ON"); }
+function turnOff() { sendMessage("commands", "OFF"); }
 
-function updateClock() {
-  const now = new Date();
-  const hh = now.getHours().toString().padStart(2, '0');
-  const mm = now.getMinutes().toString().padStart(2, '0');
-  const ss = now.getSeconds().toString().padStart(2, '0');
-  document.getElementById("clock").innerText = `${hh}:${mm}:${ss}`;
-}
-
-setInterval(updateClock, 1000);
-updateClock(); // inisialisasi awal
-
-window.turnOn = function () {
-  sendMessage("smartlamp/commands/lampu_1", "ON");
-};
-
-window.turnOff = function () {
-  sendMessage("smartlamp/commands/lampu_1", "OFF");
-};
-
-window.setSchedule = function (event) {
-  event.preventDefault();
+function setSchedule(e) {
+  e.preventDefault();
   const jam = document.getElementById("jam").value.padStart(2, "0");
   const menit = document.getElementById("menit").value.padStart(2, "0");
   const action = document.getElementById("action").value;
-  const scheduleString = `${jam}:${menit}=${action}`;
-  sendMessage("smartlamp/schedule/lampu_1", scheduleString);
-  alert("✅ Jadwal dikirim: " + scheduleString);
-};
+  const msg = `${jam}:${menit}=${action}`;
+  sendMessage("schedule", msg);
+  alert("Jadwal dikirim: " + msg);
+}
 
-function clearSchedule() {
-  if (confirm("Yakin ingin menghapus jadwal?")) {
-    sendMessage("smartlamp/schedule/lampu_1", "CLEAR");
-    alert("🗑️ Jadwal dihapus");
+function removeDevice() {
+  const id = document.getElementById("device-select").value;
+  if (!id) return;
+  if (confirm("Yakin hapus?")) {
+    firebase.database().ref("devices/" + id).remove();
+    loadDevices();
+    selectedDevice = null;
+    document.getElementById("control-section").style.display = "none";
+  }
+}
+
+function editDeviceName() {
+  const id = document.getElementById("device-select").value;
+  if (!id) return;
+  const newName = prompt("Nama baru:");
+  if (newName) {
+    firebase.database().ref("devices/" + id).update({ name: newName });
+    loadDevices();
+    document.getElementById("device-select").value = id;
   }
 }
