@@ -1,21 +1,25 @@
-document.getElementById("device-form").addEventListener("submit", function (e) {
-  e.preventDefault();
+window.addEventListener("DOMContentLoaded", () => {
+  const submitBtn = document.getElementById("submit");
+  const statusDiv = document.getElementById("status");
 
-  const id = document.getElementById("device-id").value.trim();
-  const name = document.getElementById("device-name").value.trim();
+  submitBtn.addEventListener("click", async () => {
+    const id = document.getElementById("device-id").value.trim();
+    const name = document.getElementById("device-name").value.trim();
 
-  if (!id || !name) {
-    alert("ID dan Nama harus diisi!");
-    return;
-  }
+    if (!id || !name) {
+      statusDiv.innerText = "❗ Device ID dan Nama wajib diisi.";
+      return;
+    }
 
-  db.ref("devices/" + id).set({ name })
-    .then(() => {
-      alert("✅ Perangkat berhasil ditambahkan!");
-      document.getElementById("device-form").reset();
-    })
-    .catch((error) => {
-      console.error("❌ Gagal menyimpan:", error);
-      alert("Gagal menyimpan ke Firebase.");
-    });
+    try {
+      await firebase.database().ref("devices/" + id).set({
+        name: name,
+        addedAt: new Date().toISOString()
+      });
+      statusDiv.innerText = "✅ Perangkat berhasil disimpan!";
+    } catch (e) {
+      console.error(e);
+      statusDiv.innerText = "❌ Gagal menyimpan perangkat.";
+    }
+  });
 });
