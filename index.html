@@ -242,6 +242,14 @@
         }
       });
     }
+
+    function clearSchedule() {
+  if (!selectedDevice) return;
+  if (!confirm("Yakin ingin menghapus semua jadwal untuk perangkat ini?")) return;
+  sendMessage("schedule", "clear_schedule");
+  alert("✅ Jadwal dihapus.");
+}
+
   </script>
 </body>
 </html>
