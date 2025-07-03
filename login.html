@@ -1,23 +1,105 @@
 <!DOCTYPE html>
-<html>
-<head><title>Login</title></head>
-<body>
-  <h2>Login</h2>
-  <form onsubmit="login(event)">
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-  </form>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #50e3c2);
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    input {
+      background: #fff;
+      color: #333;
+    }
+    button {
+      background-color: #ffcc00;
+      color: #333;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .google-btn {
+      background: #fff;
+      color: #444;
+      font-weight: bold;
+      border: 1px solid #ccc;
+    }
+    #status {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #ffdede;
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Login</h1>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Masuk</button>
+
+    <hr style="margin: 1.5rem 0; border-color: #ddd;" />
+    <button class="google-btn" onclick="googleLogin()">🔓 Login dengan Google</button>
+
+    <div id="status"></div>
+  </div>
+
   <script>
-    function login(e) {
-      e.preventDefault();
+    function login() {
       const email = document.getElementById("email").value;
       const pass = document.getElementById("password").value;
       firebase.auth().signInWithEmailAndPassword(email, pass)
-        .then(() => alert("Login berhasil"))
-        .catch(e => alert("Gagal: " + e.message));
+        .then(() => {
+          window.location.href = "index.html";
+        })
+        .catch(err => {
+          document.getElementById("status").innerText = "❌ Login gagal: " + err.message;
+        });
+    }
+
+    function googleLogin() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then(() => {
+          window.location.href = "index.html";
+        })
+        .catch(err => {
+          document.getElementById("status").innerText = "⚠️ Gagal login Google: " + err.message;
+        });
     }
   </script>
 </body>
