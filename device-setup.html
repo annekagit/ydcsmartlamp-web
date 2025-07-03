@@ -71,35 +71,48 @@
   <div id="status"></div>
 
   <script>
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) {
-        window.location.href = "login.html";
+  firebase.auth().onAuthStateChanged(user => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    document.getElementById("submit").addEventListener("click", () => {
+      const deviceID = document.getElementById("device-id").value.trim();
+      const deviceName = document.getElementById("device-name").value.trim();
+
+      if (!deviceID || !deviceName) {
+        showStatus("❌ ID dan Nama harus diisi", false);
         return;
       }
 
-      document.getElementById("submit").addEventListener("click", () => {
-        const id = document.getElementById("device-id").value.trim();
-        const name = document.getElementById("device-name").value.trim();
-        const statusDiv = document.getElementById("status");
+      const db = firebase.database().ref("devices");
+      db.once("value").then(snapshot => {
+        let idSudahAda = false;
 
-        if (!id || !name) {
-          statusDiv.textContent = "⚠️ Harap isi kedua kolom.";
-          return;
+        snapshot.forEach(userSnap => {
+          if (userSnap.hasChild(deviceID)) {
+            idSudahAda = true;
+          }
+        });
+
+        if (idSudahAda) {
+          showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
+        } else {
+          const ref = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
+          ref.set({ name: deviceName })
+            .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+            .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
         }
-
-        const db = firebase.database();
-        const deviceRef = db.ref("devices/" + user.uid + "/" + id);
-        deviceRef.set({ name })
-          .then(() => {
-            statusDiv.textContent = "✅ Perangkat berhasil ditambahkan.";
-            document.getElementById("device-id").value = "";
-            document.getElementById("device-name").value = "";
-          })
-          .catch(err => {
-            statusDiv.textContent = "❌ Gagal menyimpan: " + err.message;
-          });
       });
     });
-  </script>
+
+    function showStatus(msg, success) {
+      const el = document.getElementById("status");
+      el.innerText = msg;
+      el.style.color = success ? "green" : "red";
+    }
+  });
+</script>
 </body>
 </html>
