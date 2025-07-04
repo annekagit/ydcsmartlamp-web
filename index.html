@@ -106,27 +106,32 @@
     <button onclick="removeDevice()">🗑 Hapus Perangkat</button>
     <button onclick="editDeviceName()">✏️ Edit Nama Perangkat</button>
 
-    <div class="device-section" id="control-section" style="display:none">
-      <div class="status">Status: <span id="lamp-status">Unknown</span></div>
-      <div class="action-btn">
-        <button onclick="turnOn()">💡 ON</button>
-        <button onclick="turnOff()">🌑 OFF</button>
-      </div>
+    <!-- Potongan kode yang sudah Anda miliki sebelumnya tetap sama di atas... -->
 
-      <h3>⏱ Jadwal</h3>
-      <div id="current-schedule" style="margin:1rem 0; font-weight:bold; color:#333;">
-        ⏳ Jadwal Aktif: Tidak ada
-      </div>
-      <form onsubmit="setSchedule(event)">
-        <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
-        <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
-        <select id="action">
-          <option value="ON">ON</option>
-          <option value="OFF">OFF</option>
-        </select>
-        <button type="submit">Set Jadwal</button>
-        <button type="button" onclick="clearSchedule()" style="background:#d9534f;">🗑 Hapus Jadwal</button>
-      </form>
+<div class="device-section" id="control-section" style="display:none">
+  <div class="status">Status: <span id="lamp-status">Unknown</span></div>
+  <div class="action-btn">
+    <button onclick="turnOn()">💡 ON</button>
+    <button onclick="turnOff()">🌑 OFF</button>
+  </div>
+
+  <h3>⏱ Jadwal Aktif</h3>
+  <div id="active-schedule" style="margin:0.5rem 0; color: #0077cc;">
+    Tidak ada jadwal aktif.
+  </div>
+
+  <form onsubmit="setSchedule(event)">
+    <strong>Jadwal ON</strong>
+    <input type="number" id="jam-on" min="0" max="23" placeholder="Jam ON" required>
+    <input type="number" id="menit-on" min="0" max="59" placeholder="Menit ON" required>
+
+    <strong>Jadwal OFF</strong>
+    <input type="number" id="jam-off" min="0" max="23" placeholder="Jam OFF" required>
+    <input type="number" id="menit-off" min="0" max="59" placeholder="Menit OFF" required>
+
+    <button type="submit">Set Jadwal</button>
+    <button type="button" onclick="clearSchedule()" style="background:#d9534f;">🗑 Hapus Jadwal</button>
+  </form>
 
       <div id="mqtt-status">🔄 Menghubungkan ke MQTT...</div>
     </div>
