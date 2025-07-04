@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Setup Perangkat - YDC Smartlamp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -15,6 +15,7 @@
       align-items: center;
       height: 100vh;
     }
+
     .container {
       background: white;
       padding: 2rem;
@@ -23,16 +24,19 @@
       max-width: 400px;
       width: 100%;
     }
+
     h1 {
       color: #0077cc;
       margin-bottom: 1rem;
       text-align: center;
     }
+
     label {
       font-weight: bold;
       margin-top: 1rem;
       display: block;
     }
+
     input {
       width: 100%;
       padding: 0.75rem;
@@ -41,6 +45,7 @@
       border-radius: 8px;
       font-size: 1rem;
     }
+
     button {
       background-color: #0077cc;
       color: white;
@@ -53,13 +58,21 @@
       width: 100%;
       transition: background-color 0.2s;
     }
+
     button:hover {
       background-color: #005fa3;
     }
+
     #status {
       margin-top: 1rem;
       text-align: center;
       font-weight: bold;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
     }
   </style>
 
@@ -68,7 +81,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Konfigurasi Firebase -->
+  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -87,33 +100,49 @@
   </div>
 
   <script>
-    firebase.auth().onAuthStateChanged(function(user) {
+    firebase.auth().onAuthStateChanged(user => {
       if (!user) {
         window.location.href = "login.html";
         return;
       }
 
-      document.getElementById("submit").addEventListener("click", function() {
+      const uid = user.uid;
+
+      document.getElementById("submit").addEventListener("click", () => {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
-        const statusEl = document.getElementById("status");
 
         if (!deviceID || !deviceName) {
-          showStatus("❌ ID dan Nama harus diisi.", false);
+          showStatus("❌ ID dan Nama harus diisi", false);
           return;
         }
 
-        const ref = firebase.database().ref("devices/" + user.uid + "/" + deviceID);
-        ref.once("value").then(function(snapshot) {
-          if (snapshot.exists()) {
-            showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
+        const db = firebase.database().ref("devices");
+
+        // Cek apakah deviceID sudah digunakan oleh user lain
+        db.once("value").then(snapshot => {
+          let idExists = false;
+
+          snapshot.forEach(userSnap => {
+            if (userSnap.hasChild(deviceID) && userSnap.key !== uid) {
+              idExists = true;
+            }
+          });
+
+          if (idExists) {
+            showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
           } else {
-            ref.set({ name: deviceName })
-              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
-              setTimeout(() => {
-    window.location.href = "index.html";
-  }, 1500); // tunggu 1.5 detik sebelum redirect
-              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
+            firebase.database().ref(`devices/${uid}/${deviceID}`)
+              .set({ name: deviceName })
+              .then(() => {
+                showStatus("✅ Perangkat berhasil disimpan.", true);
+                setTimeout(() => {
+                  window.location.href = "index.html";
+                }, 1500);
+              })
+              .catch(err => {
+                showStatus("❌ Gagal menyimpan: " + err.message, false);
+              });
           }
         });
       });
