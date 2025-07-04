@@ -162,7 +162,7 @@
       const mqttPass = "Webpassword123";
       const clientID = "web_" + Math.floor(Math.random() * 100000);
 
-      client = new Paho.MQTT.Client(mqttHost, mqttPort, mqttPath, clientID);
+      client = new Paho.Client(mqttHost, mqttPort, mqttPath, clientID);
 
       client.connect({
         useSSL: true,
