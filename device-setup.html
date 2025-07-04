@@ -61,11 +61,6 @@
       text-align: center;
       font-weight: bold;
     }
-    @media (max-width: 480px) {
-      .container {
-        padding: 1.5rem;
-      }
-    }
   </style>
 
   <!-- Firebase SDK v8 -->
@@ -101,39 +96,21 @@
       document.getElementById("submit").addEventListener("click", function() {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
-        const uid = user.uid;
+        const statusEl = document.getElementById("status");
 
         if (!deviceID || !deviceName) {
-          showStatus("❌ ID dan Nama harus diisi", false);
+          showStatus("❌ ID dan Nama harus diisi.", false);
           return;
         }
 
-        const db = firebase.database();
-        const globalRef = db.ref("devices");
-
-        globalRef.once("value").then(snapshot => {
-          let exists = false;
-
-          snapshot.forEach(userSnap => {
-            if (userSnap.hasChild(deviceID)) {
-              exists = true;
-            }
-          });
-
-          if (exists) {
-            showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
+        const ref = firebase.database().ref("devices/" + user.uid + "/" + deviceID);
+        ref.once("value").then(function(snapshot) {
+          if (snapshot.exists()) {
+            showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
           } else {
-            const ref = db.ref("devices/" + uid + "/" + deviceID);
             ref.set({ name: deviceName })
-              .then(() => {
-                showStatus("✅ Perangkat berhasil ditambahkan.", true);
-                setTimeout(() => {
-                  window.location.href = "index.html";
-                }, 1500);
-              })
-              .catch(err => {
-                showStatus("❌ Gagal menyimpan: " + err.message, false);
-              });
+              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
           }
         });
       });
