@@ -235,8 +235,10 @@
       }
       client.subscribe(`smartlamp/status/${selectedDevice}`);
       client.subscribe(`smartlamp/schedule/${selectedDevice}`);
+      client.subscribe(`smartlamp/schedule_status/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
       requestLampStatus(); // ← otomatis minta status saat ganti perangkat
+      requestScheduleStatus();
     }
 
     function sendMessage(topic, msg) {
@@ -248,6 +250,10 @@
       console.log("MQTT >>", fullTopic, msg);
     }
 function requestLampStatus() {
+  if (!selectedDevice) return;
+  sendMessage("commands", "status_request");
+}
+    function requestScheduleStatus() {
   if (!selectedDevice) return;
   sendMessage("commands", "status_request");
 }
