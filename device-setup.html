@@ -61,12 +61,6 @@
       text-align: center;
       font-weight: bold;
     }
-
-    @media (max-width: 480px) {
-      .container {
-        padding: 1.5rem;
-      }
-    }
   </style>
 
   <!-- Firebase SDK v8 -->
@@ -93,52 +87,39 @@
   </div>
 
   <script>
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
         window.location.href = "login.html";
         return;
       }
 
-      document.getElementById("submit").addEventListener("click", () => {
+      document.getElementById("submit").addEventListener("click", function() {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
         const statusEl = document.getElementById("status");
 
         if (!deviceID || !deviceName) {
-          statusEl.innerText = "❌ Device ID dan Nama harus diisi.";
-          statusEl.style.color = "red";
+          showStatus("❌ ID dan Nama harus diisi.", false);
           return;
         }
 
-        const db = firebase.database().ref("devices");
-
-        db.once("value").then(snapshot => {
-          let idUsed = false;
-
-          snapshot.forEach(userSnap => {
-            if (userSnap.hasChild(deviceID)) {
-              idUsed = true;
-            }
-          });
-
-          if (idUsed) {
-            statusEl.innerText = "⚠️ Device ID sudah digunakan oleh pengguna lain.";
-            statusEl.style.color = "red";
+        const ref = firebase.database().ref("devices/" + user.uid + "/" + deviceID);
+        ref.once("value").then(function(snapshot) {
+          if (snapshot.exists()) {
+            showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
           } else {
-            const deviceRef = firebase.database().ref(`devices/${user.uid}/${deviceID}`);
-            deviceRef.set({ name: deviceName })
-              .then(() => {
-                statusEl.innerText = "✅ Perangkat berhasil ditambahkan.";
-                statusEl.style.color = "green";
-                setTimeout(() => window.location.href = "index.html", 1500);
-              })
-              .catch(err => {
-                statusEl.innerText = "❌ Gagal menyimpan: " + err.message;
-                statusEl.style.color = "red";
-              });
+            ref.set({ name: deviceName })
+              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
           }
         });
       });
+
+      function showStatus(msg, success) {
+        const el = document.getElementById("status");
+        el.innerText = msg;
+        el.style.color = success ? "green" : "red";
+      }
     });
   </script>
 </body>
