@@ -110,6 +110,9 @@
           } else {
             ref.set({ name: deviceName })
               .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+              setTimeout(() => {
+    window.location.href = "index.html";
+  }, 1500); // tunggu 1.5 detik sebelum redirect
               .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
           }
         });
