@@ -180,6 +180,7 @@
         if (!selectedDevice) return;
         const expectedStatus = `smartlamp/status/${selectedDevice}`;
         const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
+        const expectedScheduleStatus = `smartlamp/schedule_status/${selectedDevice}`;
         if (message.destinationName === expectedStatus) {
           document.getElementById("lamp-status").innerText = message.payloadString;
         } else if (message.destinationName === expectedSchedule) {
@@ -255,7 +256,7 @@ function requestLampStatus() {
 }
     function requestScheduleStatus() {
   if (!selectedDevice) return;
-  sendMessage("schedule", "status_request");
+  sendMessage("schedule_status", "status_request");
 }
     function turnOn() { sendMessage("commands", "ON"); }
     function turnOff() { sendMessage("commands", "OFF"); }
