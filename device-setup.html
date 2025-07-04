@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Setup Perangkat - YDC Smartlamp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -15,7 +15,6 @@
       align-items: center;
       height: 100vh;
     }
-
     .container {
       background: white;
       padding: 2rem;
@@ -24,19 +23,16 @@
       max-width: 400px;
       width: 100%;
     }
-
     h1 {
       color: #0077cc;
       margin-bottom: 1rem;
       text-align: center;
     }
-
     label {
       font-weight: bold;
       margin-top: 1rem;
       display: block;
     }
-
     input {
       width: 100%;
       padding: 0.75rem;
@@ -45,7 +41,6 @@
       border-radius: 8px;
       font-size: 1rem;
     }
-
     button {
       background-color: #0077cc;
       color: white;
@@ -58,17 +53,14 @@
       width: 100%;
       transition: background-color 0.2s;
     }
-
     button:hover {
       background-color: #005fa3;
     }
-
     #status {
       margin-top: 1rem;
       text-align: center;
       font-weight: bold;
     }
-
     @media (max-width: 480px) {
       .container {
         padding: 1.5rem;
@@ -81,7 +73,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-  <!-- Firebase Config -->
+  <!-- Konfigurasi Firebase -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -100,42 +92,41 @@
   </div>
 
   <script>
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
         window.location.href = "login.html";
         return;
       }
 
-      const uid = user.uid;
-
-      document.getElementById("submit").addEventListener("click", () => {
+      document.getElementById("submit").addEventListener("click", function() {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
+        const uid = user.uid;
 
         if (!deviceID || !deviceName) {
           showStatus("❌ ID dan Nama harus diisi", false);
           return;
         }
 
-        const db = firebase.database().ref("devices");
+        const db = firebase.database();
+        const globalRef = db.ref("devices");
 
-        // Cek apakah deviceID sudah digunakan oleh user lain
-        db.once("value").then(snapshot => {
-          let idExists = false;
+        globalRef.once("value").then(snapshot => {
+          let exists = false;
 
           snapshot.forEach(userSnap => {
-            if (userSnap.hasChild(deviceID) && userSnap.key !== uid) {
-              idExists = true;
+            if (userSnap.hasChild(deviceID)) {
+              exists = true;
             }
           });
 
-          if (idExists) {
+          if (exists) {
             showStatus("⚠️ Device ID sudah digunakan oleh pengguna lain.", false);
           } else {
-            firebase.database().ref(`devices/${uid}/${deviceID}`)
-              .set({ name: deviceName })
+            const ref = db.ref("devices/" + uid + "/" + deviceID);
+            ref.set({ name: deviceName })
               .then(() => {
-                showStatus("✅ Perangkat berhasil disimpan.", true);
+                showStatus("✅ Perangkat berhasil ditambahkan.", true);
                 setTimeout(() => {
                   window.location.href = "index.html";
                 }, 1500);
