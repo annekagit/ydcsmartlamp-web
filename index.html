@@ -26,12 +26,8 @@
     }
     header .right {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-    }
-    #mqtt-status {
-      font-size: 0.85rem;
-      margin-top: 4px;
+      gap: 1rem;
+      align-items: center;
     }
     main {
       padding: 2rem;
@@ -74,14 +70,14 @@
       gap: 1rem;
       margin-top: 1rem;
     }
+    #mqtt-status {
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
     @media (max-width: 500px) {
       header {
         flex-direction: column;
         align-items: flex-start;
-      }
-      .right {
-        align-items: flex-start;
-        margin-top: 0.5rem;
       }
       .action-btn {
         flex-direction: column;
@@ -93,9 +89,11 @@
   <header>
     <h1>💡 YDC Smartlamp</h1>
     <div class="right">
-      <span id="greeting">Hallo, teman</span>
-      <span id="mqtt-status">🔌 MQTT: Menghubungkan...</span>
-      <button onclick="logout()" style="background: #e53935; margin-top: 0.5rem;">Logout</button>
+      <div>
+        <span id="greeting">Hallo, teman</span>
+        <div id="mqtt-status">🔌 MQTT: Menghubungkan...</div>
+      </div>
+      <button onclick="logout()" style="background: #e53935;">Logout</button>
     </div>
   </header>
 
@@ -144,6 +142,7 @@
   <script>
     let uid = null;
     let selectedDevice = null;
+    let client = null;
 
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
@@ -153,42 +152,45 @@
       uid = user.uid;
       document.getElementById("greeting").innerText = "Hallo, " + (user.displayName || user.email);
       loadDevices();
+      setupMQTT();
     });
 
-    const mqttHost = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
-    const mqttPort = 8884;
-    const mqttPath = "/mqtt";
-    const mqttUser = "webclient_user";
-    const mqttPass = "Webpassword123";
-    const clientID = "web_" + Math.floor(Math.random() * 100000);
+    function setupMQTT() {
+      const mqttHost = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
+      const mqttPort = 8884;
+      const mqttPath = "/mqtt";
+      const mqttUser = "webclient_user";
+      const mqttPass = "Webpassword123";
+      const clientID = "web_" + Math.floor(Math.random() * 100000);
 
-    const client = new Paho.MQTT.Client(mqttHost, mqttPort, mqttPath, clientID);
+      client = new Paho.MQTT.Client(mqttHost, mqttPort, mqttPath, clientID);
 
-    client.connect({
-      useSSL: true,
-      userName: mqttUser,
-      password: mqttPass,
-      onSuccess: () => {
-        console.log("✅ MQTT Terhubung");
-        document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terhubung";
-      },
-      onFailure: e => {
-        console.error("❌ MQTT Gagal", e);
-        document.getElementById("mqtt-status").innerText = "🔌 MQTT: Gagal Terhubung";
-      }
-    });
+      client.onConnectionLost = () => {
+        document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terputus";
+      };
 
-    client.onConnectionLost = () => {
-      document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terputus";
-    };
+      client.onMessageArrived = message => {
+        if (!selectedDevice) return;
+        const expected = `smartlamp/status/${selectedDevice}`;
+        if (message.destinationName === expected) {
+          document.getElementById("lamp-status").innerText = message.payloadString;
+        }
+      };
 
-    client.onMessageArrived = message => {
-      if (!selectedDevice) return;
-      const expected = `smartlamp/status/${selectedDevice}`;
-      if (message.destinationName === expected) {
-        document.getElementById("lamp-status").innerText = message.payloadString;
-      }
-    };
+      client.connect({
+        useSSL: true,
+        userName: mqttUser,
+        password: mqttPass,
+        onSuccess: () => {
+          console.log("✅ MQTT Terhubung");
+          document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terhubung";
+        },
+        onFailure: e => {
+          console.error("❌ MQTT Gagal", e);
+          document.getElementById("mqtt-status").innerText = "🔌 MQTT: Gagal Terhubung";
+        }
+      });
+    }
 
     function loadDevices() {
       const ref = firebase.database().ref("devices/" + uid);
@@ -206,16 +208,17 @@
 
     function onDeviceChange() {
       selectedDevice = document.getElementById("device-select").value;
-      if (!selectedDevice) {
+      if (!selectedDevice || !client || !client.isConnected()) {
         document.getElementById("control-section").style.display = "none";
         return;
       }
+
       client.subscribe(`smartlamp/status/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
     }
 
     function sendMessage(topic, msg) {
-      if (!selectedDevice) return;
+      if (!selectedDevice || !client || !client.isConnected()) return;
       const fullTopic = `smartlamp/${topic}/${selectedDevice}`;
       const message = new Paho.MQTT.Message(msg);
       message.destinationName = fullTopic;
