@@ -192,7 +192,7 @@
       let attempts = 0;
 
       const interval = setInterval(() => {
-        if (typeof Paho !== "undefined" && typeof Paho.MQTT.Client !== "undefined") {
+        if (typeof Paho !== "undefined" && typeof Paho.Client !== "undefined") {
           clearInterval(interval);
           setupMQTT();
         } else {
