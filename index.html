@@ -235,7 +235,7 @@
     function sendMessage(topic, msg) {
       if (!selectedDevice || !client) return;
       const fullTopic = `smartlamp/${topic}/${selectedDevice}`;
-      const message = new Paho.MQTT.Message(msg);
+      const message = new Paho.Message(msg);
       message.destinationName = fullTopic;
       client.send(message);
       console.log("MQTT >>", fullTopic, msg);
