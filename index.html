@@ -26,8 +26,12 @@
     }
     header .right {
       display: flex;
-      gap: 1rem;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    #mqtt-status {
+      font-size: 0.85rem;
+      margin-top: 4px;
     }
     main {
       padding: 2rem;
@@ -75,6 +79,10 @@
         flex-direction: column;
         align-items: flex-start;
       }
+      .right {
+        align-items: flex-start;
+        margin-top: 0.5rem;
+      }
       .action-btn {
         flex-direction: column;
       }
@@ -85,8 +93,9 @@
   <header>
     <h1>💡 YDC Smartlamp</h1>
     <div class="right">
-      <span id="greeting">Hallo, teman </span>
-      <button onclick="logout()" style="background: #e53935;">Logout</button>
+      <span id="greeting">Hallo, teman</span>
+      <span id="mqtt-status">🔌 MQTT: Menghubungkan...</span>
+      <button onclick="logout()" style="background: #e53935; margin-top: 0.5rem;">Logout</button>
     </div>
   </header>
 
@@ -161,9 +170,17 @@
       password: mqttPass,
       onSuccess: () => {
         console.log("✅ MQTT Terhubung");
+        document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terhubung";
       },
-      onFailure: e => console.error("❌ MQTT Gagal", e)
+      onFailure: e => {
+        console.error("❌ MQTT Gagal", e);
+        document.getElementById("mqtt-status").innerText = "🔌 MQTT: Gagal Terhubung";
+      }
     });
+
+    client.onConnectionLost = () => {
+      document.getElementById("mqtt-status").innerText = "🔌 MQTT: Terputus";
+    };
 
     client.onMessageArrived = message => {
       if (!selectedDevice) return;
