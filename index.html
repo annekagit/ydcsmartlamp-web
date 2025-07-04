@@ -89,7 +89,7 @@
 <body>
   <header>
     <h1>💡 YDC Smartlamp</h1>
-    <span id="clock" style="font-weight:normal; font-size:0.9rem;"></span>
+    <span id="clock" style="font-weight:normal; font-size:1.3rem;"></span>
     <div class="right">
       <span id="greeting">Hallo, teman</span>
       <button onclick="logout()" style="background: #e53935;">Logout</button>
@@ -236,6 +236,7 @@
       client.subscribe(`smartlamp/status/${selectedDevice}`);
       client.subscribe(`smartlamp/schedule/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
+      requestLampStatus(); // ← otomatis minta status saat ganti perangkat
     }
 
     function sendMessage(topic, msg) {
@@ -246,7 +247,10 @@
       client.send(message);
       console.log("MQTT >>", fullTopic, msg);
     }
-
+function requestLampStatus() {
+  if (!selectedDevice) return;
+  sendMessage("commands", "status_request");
+}
     function turnOn() { sendMessage("commands", "ON"); }
     function turnOff() { sendMessage("commands", "OFF"); }
 
