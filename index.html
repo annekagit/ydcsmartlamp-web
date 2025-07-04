@@ -114,6 +114,9 @@
       </div>
 
       <h3>⏱ Jadwal</h3>
+      <div id="current-schedule" style="margin:1rem 0; font-weight:bold; color:#333;">
+        ⏳ Jadwal Aktif: Tidak ada
+      </div>
       <form onsubmit="setSchedule(event)">
         <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
         <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
@@ -129,17 +132,11 @@
     </div>
   </main>
 
-  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <!-- MQTT Paho (pastikan dimuat sebelum script utama dijalankan) -->
   <script src="https://cdn.jsdelivr.net/npm/paho-mqtt@1.1.0/paho-mqtt.min.js"></script>
-
-  <!-- Firebase Config -->
   <script src="firebase-config.js"></script>
-
   <script>
     let uid = null;
     let selectedDevice = null;
@@ -181,9 +178,18 @@
 
       client.onMessageArrived = message => {
         if (!selectedDevice) return;
-        const expected = `smartlamp/status/${selectedDevice}`;
-        if (message.destinationName === expected) {
+        const expectedStatus = `smartlamp/status/${selectedDevice}`;
+        const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
+        if (message.destinationName === expectedStatus) {
           document.getElementById("lamp-status").innerText = message.payloadString;
+        } else if (message.destinationName === expectedSchedule) {
+          const payload = message.payloadString;
+          if (payload === "clear_schedule") {
+            document.getElementById("current-schedule").innerText = "⏳ Jadwal Aktif: Tidak ada";
+          } else {
+            const [time, action] = payload.split("=");
+            document.getElementById("current-schedule").innerText = `⏳ Jadwal Aktif: ${time} untuk ${action}`;
+          }
         }
       };
     }
@@ -191,7 +197,6 @@
     function waitForPahoAndSetupMQTT() {
       const maxAttempts = 20;
       let attempts = 0;
-
       const interval = setInterval(() => {
         if (typeof Paho !== "undefined" && typeof Paho.Client !== "undefined") {
           clearInterval(interval);
@@ -206,7 +211,6 @@
         }
       }, 250);
     }
-
     window.addEventListener("load", waitForPahoAndSetupMQTT);
 
     function loadDevices() {
@@ -230,6 +234,7 @@
         return;
       }
       client.subscribe(`smartlamp/status/${selectedDevice}`);
+      client.subscribe(`smartlamp/schedule/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
     }
 
@@ -291,16 +296,16 @@
         window.location.href = "login.html";
       });
     }
-function updateClock() {
-  const now = new Date();
-  const jam = String(now.getHours()).padStart(2, '0');
-  const menit = String(now.getMinutes()).padStart(2, '0');
-  const detik = String(now.getSeconds()).padStart(2, '0');
-  document.getElementById("clock").innerText = `${jam}:${menit}:${detik}`;
-}
 
-setInterval(updateClock, 1000);
-updateClock(); // panggil langsung saat pertama kali
+    function updateClock() {
+      const now = new Date();
+      const jam = String(now.getHours()).padStart(2, '0');
+      const menit = String(now.getMinutes()).padStart(2, '0');
+      const detik = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById("clock").innerText = `${jam}:${menit}:${detik}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
   </script>
 </body>
 </html>
