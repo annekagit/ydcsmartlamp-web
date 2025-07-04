@@ -89,7 +89,7 @@
 <body>
   <header>
     <h1>💡 YDC Smartlamp</h1>
-    <span id="clock" style="font-weight:normal; font-size:0.9rem;"></span>
+    <span id="clock" style="font-weight:normal; font-size:1.2rem;"></span>
     <div class="right">
       <span id="greeting">Hallo, teman</span>
       <button onclick="logout()" style="background: #e53935;">Logout</button>
@@ -256,21 +256,30 @@
     function turnOff() { sendMessage("commands", "OFF"); }
 
     function setSchedule(e) {
-      e.preventDefault();
-      const jam = document.getElementById("jam").value.padStart(2, "0");
-      const menit = document.getElementById("menit").value.padStart(2, "0");
-      const action = document.getElementById("action").value;
-      const msg = `${jam}:${menit}=${action}`;
-      sendMessage("schedule", msg);
-      alert("⏱ Jadwal dikirim: " + msg);
-    }
+  e.preventDefault();
+  const jamOn = document.getElementById("jam-on").value.padStart(2, "0");
+  const menitOn = document.getElementById("menit-on").value.padStart(2, "0");
+  const jamOff = document.getElementById("jam-off").value.padStart(2, "0");
+  const menitOff = document.getElementById("menit-off").value.padStart(2, "0");
 
-    function clearSchedule() {
-      if (!selectedDevice) return;
-      if (confirm("Yakin ingin menghapus jadwal?")) {
-        sendMessage("schedule", "clear_schedule");
-      }
-    }
+  const msgOn = `${jamOn}:${menitOn}=ON`;
+  const msgOff = `${jamOff}:${menitOff}=OFF`;
+
+  sendMessage("schedule", msgOn);
+  sendMessage("schedule", msgOff);
+
+  document.getElementById("active-schedule").innerText = `ON: ${jamOn}:${menitOn}, OFF: ${jamOff}:${menitOff}`;
+  alert("⏱ Jadwal ON/OFF telah dikirim.");
+}
+
+function clearSchedule() {
+  if (!selectedDevice) return;
+  if (confirm("Yakin ingin menghapus jadwal?")) {
+    sendMessage("schedule", "clear_schedule");
+    document.getElementById("active-schedule").innerText = "Tidak ada jadwal aktif.";
+  }
+}
+
 
     function removeDevice() {
       if (!selectedDevice || !confirm("Hapus perangkat ini?")) return;
