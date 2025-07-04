@@ -255,7 +255,7 @@ function requestLampStatus() {
 }
     function requestScheduleStatus() {
   if (!selectedDevice) return;
-  sendMessage("commands", "status_request");
+  sendMessage("schedule", "status_request");
 }
     function turnOn() { sendMessage("commands", "ON"); }
     function turnOff() { sendMessage("commands", "OFF"); }
