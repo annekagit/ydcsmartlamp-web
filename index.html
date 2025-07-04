@@ -91,6 +91,7 @@
     <h1>💡 YDC Smartlamp</h1>
     <div class="right">
       <span id="greeting">Hallo, teman</span>
+      <span id="clock" style="font-weight:normal; font-size:0.9rem;"></span>
       <button onclick="logout()" style="background: #e53935;">Logout</button>
     </div>
   </header>
@@ -290,6 +291,16 @@
         window.location.href = "login.html";
       });
     }
+function updateClock() {
+  const now = new Date();
+  const jam = String(now.getHours()).padStart(2, '0');
+  const menit = String(now.getMinutes()).padStart(2, '0');
+  const detik = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById("clock").innerText = `${jam}:${menit}:${detik}`;
+}
+
+setInterval(updateClock, 1000);
+updateClock(); // panggil langsung saat pertama kali
   </script>
 </body>
 </html>
