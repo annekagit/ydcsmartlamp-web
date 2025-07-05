@@ -90,6 +90,9 @@
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
       Login dengan Google
     </button>
+    <div class="link">
+      <a href="#" onclick="resetPassword()">🔁 Lupa password?</a>
+    </div>
     <div class="status" id="status"></div>
     <div class="link">
       Belum punya akun? <a href="register.html">Daftar</a>
@@ -127,6 +130,27 @@
         .catch(err => {
           document.getElementById("status").innerText = "⚠️ Gagal login Google: " + err.message;
           document.getElementById("status").style.color = "red";
+        });
+    }
+
+    function resetPassword() {
+      const email = document.getElementById("email").value;
+      const status = document.getElementById("status");
+
+      if (!email) {
+        status.innerText = "📧 Masukkan email untuk reset password.";
+        status.style.color = "orange";
+        return;
+      }
+
+      firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+          status.innerText = "✅ Link reset telah dikirim ke email.";
+          status.style.color = "green";
+        })
+        .catch(error => {
+          status.innerText = "❌ " + error.message;
+          status.style.color = "red";
         });
     }
   </script>
