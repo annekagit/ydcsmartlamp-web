@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>YDC Smartlamp - Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -64,6 +64,9 @@
     .status {
       margin-top: 1rem;
       font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .action-btn {
       display: flex;
@@ -107,7 +110,10 @@
     <button onclick="editDeviceName()">✏️ Edit Nama Perangkat</button>
 
     <div class="device-section" id="control-section" style="display:none">
-      <div class="status">Status: <span id="lamp-status">Unknown</span></div>
+      <div class="status">
+        Status: <span id="lamp-status">Unknown</span>
+        <span id="lamp-icon"></span>
+      </div>
       <div class="action-btn">
         <button onclick="turnOn()">💡 ON</button>
         <button onclick="turnOff()">🌑 OFF</button>
@@ -167,11 +173,9 @@
         userName: mqttUser,
         password: mqttPass,
         onSuccess: () => {
-          console.log("✅ MQTT Terhubung");
           document.getElementById("mqtt-status").innerText = "✅ MQTT Terhubung";
         },
         onFailure: e => {
-          console.error("❌ MQTT Gagal", e);
           document.getElementById("mqtt-status").innerText = "❌ MQTT Gagal";
         }
       });
@@ -180,9 +184,10 @@
         if (!selectedDevice) return;
         const expectedStatus = `smartlamp/status/${selectedDevice}`;
         const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
-        const expectedScheduleStatus = `smartlamp/schedule_status/${selectedDevice}`;
         if (message.destinationName === expectedStatus) {
-          document.getElementById("lamp-status").innerText = message.payloadString;
+          const statusText = message.payloadString;
+          document.getElementById("lamp-status").innerText = statusText;
+          updateLampIcon(statusText);
         } else if (message.destinationName === expectedSchedule) {
           const payload = message.payloadString;
           if (payload === "clear_schedule") {
@@ -193,6 +198,45 @@
           }
         }
       };
+    }
+
+    function updateLampIcon(status) {
+      const iconContainer = document.getElementById("lamp-icon");
+      if (status === "ON") {
+        iconContainer.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+              <style>
+                .bulb {
+                  fill: #ffc107;
+                  animation: pulseGlow 1.2s infinite alternate;
+                  filter: url(#glow);
+                }
+                @keyframes pulseGlow {
+                  0% { filter: drop-shadow(0 0 3px #ffc107); }
+                  100% { filter: drop-shadow(0 0 10px #fff176); }
+                }
+              </style>
+            </defs>
+            <path class="bulb" d="M9 21h6v-1H9v1zm3-20C7.58 1 4 4.58 4 9c0 2.65 1.3 5 3.3 6.5.46.34.7.88.7 1.45v1.55h8v-1.55c0-.57.24-1.11.7-1.45C18.7 14 20 11.65 20 9c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        `;
+      } else if (status === "OFF") {
+        iconContainer.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#999" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 21h6v-1H9v1zm3-20C7.58 1 4 4.58 4 9c0 2.65 1.3 5 3.3 6.5.46.34.7.88.7 1.45v1.55h8v-1.55c0-.57.24-1.11.7-1.45C18.7 14 20 11.65 20 9c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        `;
+      } else {
+        iconContainer.innerHTML = "";
+      }
     }
 
     function waitForPahoAndSetupMQTT() {
@@ -206,7 +250,6 @@
           attempts++;
           if (attempts >= maxAttempts) {
             clearInterval(interval);
-            console.error("❌ Paho MQTT gagal dimuat setelah 5 detik.");
             document.getElementById("mqtt-status").innerText = "❌ MQTT gagal dimuat";
           }
         }
@@ -236,10 +279,8 @@
       }
       client.subscribe(`smartlamp/status/${selectedDevice}`);
       client.subscribe(`smartlamp/schedule/${selectedDevice}`);
-      client.subscribe(`smartlamp/schedule_status/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
-      requestLampStatus(); // ← otomatis minta status saat ganti perangkat
-      requestScheduleStatus();
+      requestLampStatus();
     }
 
     function sendMessage(topic, msg) {
@@ -248,18 +289,20 @@
       const message = new Paho.Message(msg);
       message.destinationName = fullTopic;
       client.send(message);
-      console.log("MQTT >>", fullTopic, msg);
     }
-function requestLampStatus() {
-  if (!selectedDevice) return;
-  sendMessage("commands", "status_request");
-}
-    function requestScheduleStatus() {
-  if (!selectedDevice) return;
-  sendMessage("schedule_status", "status_request");
-}
-    function turnOn() { sendMessage("commands", "ON"); }
-    function turnOff() { sendMessage("commands", "OFF"); }
+
+    function requestLampStatus() {
+      if (!selectedDevice) return;
+      sendMessage("commands", "status_request");
+    }
+
+    function turnOn() {
+      sendMessage("commands", "ON");
+    }
+
+    function turnOff() {
+      sendMessage("commands", "OFF");
+    }
 
     function setSchedule(e) {
       e.preventDefault();
