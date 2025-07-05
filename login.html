@@ -123,7 +123,7 @@
         .catch(err => {
           let message = "❌ Terjadi kesalahan.";
 
-          switch (err.code) {
+          switch (errorCode) {
             case "auth/user-not-found":
               message = "❌ Email belum terdaftar.";
               break;
@@ -133,7 +133,7 @@
             case "auth/invalid-email":
               message = "❌ Format email tidak valid.";
               break;
-              case "auth/invalid-credentials":
+              case "auth/invalid-login-credentials":
         message = "❌ Email atau password tidak valid.";
         break;
       case "auth/too-many-requests":
