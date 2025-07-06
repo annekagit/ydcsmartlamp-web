@@ -56,10 +56,14 @@
     button:hover {
       background-color: #005fa3;
     }
-    #status {
+    #status, #device-count {
       margin-top: 1rem;
       text-align: center;
       font-weight: bold;
+    }
+    #device-count {
+      color: #555;
+      font-size: 0.95rem;
     }
   </style>
 
@@ -76,6 +80,8 @@
     <a href="index.html" style="position:left; top:16px; left:16px; text-decoration:none; color:#0077cc; font-size:0.9rem;">← Kembali</a>
     <h1>🔧 Tambah Perangkat</h1>
 
+    <div id="device-count">Memuat data perangkat...</div>
+
     <label for="device-id">Device ID (cth: abc123):</label>
     <input type="text" id="device-id" placeholder="Masukkan Device ID">
 
@@ -88,13 +94,24 @@
   </div>
 
   <script>
+    const MAX_DEVICES = 3;
+
     firebase.auth().onAuthStateChanged(function(user) {
       if (!user) {
         window.location.href = "login.html";
         return;
       }
 
-      document.getElementById("submit").addEventListener("click", function() {
+      const deviceCountEl = document.getElementById("device-count");
+      const userDevicesRef = firebase.database().ref("devices/" + user.uid);
+
+      // Tampilkan jumlah perangkat saat ini
+      userDevicesRef.on("value", function(snapshot) {
+        const count = snapshot.numChildren();
+        deviceCountEl.innerText = `Anda telah menambahkan ${count} dari ${MAX_DEVICES} perangkat.`;
+      });
+
+      document.getElementById("submit").addEventListener("click", function () {
         const deviceID = document.getElementById("device-id").value.trim();
         const deviceName = document.getElementById("device-name").value.trim();
         const statusEl = document.getElementById("status");
@@ -104,15 +121,24 @@
           return;
         }
 
-        const ref = firebase.database().ref("devices/" + user.uid + "/" + deviceID);
-        ref.once("value").then(function(snapshot) {
-          if (snapshot.exists()) {
-            showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
-          } else {
-            ref.set({ name: deviceName })
-              .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
-              .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
+        // Hitung ulang sebelum menyimpan
+        userDevicesRef.once("value").then(function (snapshot) {
+          const count = snapshot.numChildren();
+          if (count >= MAX_DEVICES) {
+            showStatus("⚠️ Batas maksimal perangkat (" + MAX_DEVICES + ") telah tercapai.", false);
+            return;
           }
+
+          const deviceRef = userDevicesRef.child(deviceID);
+          deviceRef.once("value").then(function (deviceSnap) {
+            if (deviceSnap.exists()) {
+              showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
+            } else {
+              deviceRef.set({ name: deviceName })
+                .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+                .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
+            }
+          });
         });
       });
 
