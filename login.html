@@ -83,9 +83,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-
-  <!-- FingerprintJS v2.1.5 UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@2/dist/fp.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -100,120 +97,95 @@
     <div class="link">
       <a href="#" onclick="resetPassword()">🔁 Lupa Password?</a>
     </div>
-    <div class="status" id="status">📡 Mendeteksi browser...</div>
+    <div class="status" id="status">📡 Mendeteksi perangkat...</div>
     <div class="link">
       Belum punya akun? <a href="register.html">Daftar</a>
     </div>
   </div>
 
+  <!-- FingerprintJS UMD v2.1.5 (pastikan ini dipanggil sebelum main.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@2.1.5/dist/fingerprint2.min.js"></script>
+
+  <!-- Script utama -->
   <script>
     let fingerprintID = null;
 
-    // Inisialisasi Fingerprint
-    FingerprintJS.load().then(fp => {
-      fp.get().then(result => {
-        fingerprintID = result.visitorId;
+    window.addEventListener("load", () => {
+      // Pastikan Fingerprint2 tersedia
+      if (typeof Fingerprint2 === "undefined") {
+        document.getElementById("status").innerText = "❌ Gagal memuat FingerprintJS.";
+        return;
+      }
+
+      // Gunakan fingerprint v2 (callback style)
+      new Fingerprint2().get(function(result) {
+        fingerprintID = result;
         console.log("Fingerprint ID:", fingerprintID);
 
-        // Cek apakah fingerprint sudah pernah digunakan
         firebase.database().ref("fingerprints/" + fingerprintID).once("value")
           .then(snapshot => {
             const data = snapshot.val();
             if (data && data.uid) {
-              showStatus("✅ Perangkat terdeteksi.", true);
-              document.getElementById("btnManual").disabled = false;
-              document.getElementById("btnGoogle").disabled = false;
+              showStatus("✅ Perangkat dikenali.", true);
             } else {
               showStatus("✅ Perangkat baru. Silakan login.", true);
-              document.getElementById("btnManual").disabled = false;
-              document.getElementById("btnGoogle").disabled = false;
             }
+            document.getElementById("btnManual").disabled = false;
+            document.getElementById("btnGoogle").disabled = false;
           })
           .catch(err => {
-            showStatus("❌ Gagal memuat fingerprint: " + err.message, false);
+            showStatus("❌ Gagal membaca fingerprint: " + err.message, false);
           });
       });
-    }).catch(() => {
-      showStatus("❌ Gagal memuat FingerprintJS.", false);
     });
 
-    function showStatus(msg, success) {
+    function showStatus(msg, ok = true) {
       const el = document.getElementById("status");
       el.innerText = msg;
-      el.style.color = success ? "green" : "red";
+      el.style.color = ok ? "green" : "red";
     }
 
     function loginManual() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
-      const status = document.getElementById("status");
-
-      if (!email || !password) {
-        showStatus("❗ Email dan password wajib diisi.", false);
-        return;
-      }
+      if (!email || !password) return showStatus("❗ Email & password wajib diisi", false);
 
       firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          const uid = userCredential.user.uid;
-          simpanFingerprint(uid);
-        })
-        .catch(err => {
-          showStatus("❌ " + err.message, false);
-        });
+        .then(cred => simpanFingerprint(cred.user.uid))
+        .catch(err => showStatus("❌ " + err.message, false));
     }
 
     function loginGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider)
-        .then(result => {
-          const uid = result.user.uid;
-          simpanFingerprint(uid);
-        })
-        .catch(err => {
-          showStatus("❌ Gagal login Google: " + err.message, false);
-        });
+        .then(cred => simpanFingerprint(cred.user.uid))
+        .catch(err => showStatus("❌ Login Google gagal: " + err.message, false));
     }
 
     function simpanFingerprint(uid) {
-      if (!fingerprintID) {
-        showStatus("❌ Browser belum siap, Tunggu sebentar...", false);
-        return;
-      }
+      if (!fingerprintID) return showStatus("❌ Fingerprint belum tersedia", false);
 
       const ref = firebase.database().ref("fingerprints/" + fingerprintID);
-
-      ref.transaction(currentData => {
-        if (currentData === null) {
-          return { uid: uid };
-        } else if (currentData.uid === uid) {
-          return currentData; // Fingerprint sudah dimiliki user ini
-        } else {
-          showStatus("⚠️ Anda hanya dapat membuat akun 1 kali pada perangkat ini.", false);
-          setTimeout(() => firebase.auth().signOut(), 1000);
-          return; // Tolak overwrite fingerprint
-        }
-      }, (error, committed) => {
-        if (error) {
-          showStatus("❌ Gagal menyimpan.", false);
-        } else if (!committed) {
-          // Tidak disimpan karena UID beda
-        } else {
-          showStatus("✅ Login berhasil.", true);
-          window.location.href = "index.html";
-        }
+      ref.transaction(current => {
+        if (!current) return { uid };
+        if (current.uid === uid) return current;
+        showStatus("⚠️ Perangkat ini sudah digunakan akun lain.", false);
+        setTimeout(() => firebase.auth().signOut(), 1000);
+        return;
+      }, (err, committed) => {
+        if (err) return showStatus("❌ Gagal menyimpan fingerprint", false);
+        if (!committed) return;
+        showStatus("✅ Login berhasil.", true);
+        setTimeout(() => window.location.href = "index.html", 1000);
       });
     }
 
     function resetPassword() {
       const email = prompt("Masukkan email untuk reset password:");
-      if (!email) {
-        showStatus("❗ Email tidak boleh kosong.", false);
-        return;
-      }
+      if (!email) return showStatus("❗ Email tidak boleh kosong.", false);
 
       firebase.auth().sendPasswordResetEmail(email)
-        .then(() => showStatus("📧 Email reset telah dikirim.", true))
+        .then(() => showStatus("📧 Email reset dikirim.", true))
         .catch(err => showStatus("❌ " + err.message, false));
     }
   </script>
