@@ -38,29 +38,15 @@
       width: 100%;
       padding: 0.8rem;
       margin-top: 1.2rem;
+      background-color: #0077cc;
+      color: white;
       font-size: 1rem;
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
-    .manual-btn {
-      background-color: #0077cc;
-      color: white;
-    }
-    .manual-btn:hover {
+    button:hover {
       background-color: #005fa3;
-    }
-    .google-btn {
-      background-color: #ffffff;
-      color: #333;
-      border: 1px solid #ccc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .google-btn img {
-      height: 20px;
-      margin-right: 10px;
     }
     .status {
       text-align: center;
@@ -75,15 +61,11 @@
       color: #0077cc;
       text-decoration: none;
     }
-    .link a:hover {
-      text-decoration: underline;
-    }
   </style>
 
   <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -91,55 +73,22 @@
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button class="manual-btn" onclick="registerManual()">📥 Daftar Manual</button>
-    <button class="google-btn" onclick="registerWithGoogle()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
-      Daftar dengan Google
-    </button>
-    <div class="status" id="status">Mengecek status...</div>
+    <button onclick="register()">📥 Daftar</button>
+    <div class="status" id="status"></div>
     <div class="link">
       Sudah punya akun? <a href="login.html">Login</a>
     </div>
   </div>
 
   <script>
-    let userIP = null;
-    const status = document.getElementById("status");
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
 
-    // Deteksi IP publik
-    fetch("https://api.ipify.org?format=json")
-      .then(res => res.json())
-      .then(data => {
-        userIP = data.ip;
-        status.innerText = "✅ Siap Didaftarkan: " + userIP;
-        status.style.color = "green";
-      })
-      .catch(() => {
-        status.innerText = "❌ Gagal mengecek daftar.";
-        status.style.color = "red";
-      });
-
-    function checkIPBeforeRegister(callback) {
-      if (!userIP) {
-        status.innerText = "❗ Proses....";
-        status.style.color = "red";
-        return;
-      }
-
-      const ipRef = firebase.database().ref("ip_register/" + userIP);
-      ipRef.once("value").then(snapshot => {
-        if (snapshot.exists()) {
-          status.innerText = "⚠️ Hanya boleh daftar 1 akun.";
-          status.style.color = "red";
-        } else {
-          callback(ipRef); // lanjut daftar
-        }
-      });
-    }
-
-    function registerManual() {
+    function register() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
+      const status = document.getElementById("status");
 
       if (!email || !password) {
         status.innerText = "❗ Email dan password wajib diisi.";
@@ -147,55 +96,16 @@
         return;
       }
 
-      checkIPBeforeRegister((ipRef) => {
-        firebase.auth().createUserWithEmailAndPassword(email, password)
-          .then(userCred => {
-            const user = userCred.user;
-            user.sendEmailVerification(); // verifikasi email
-            return ipRef.set({
-              uid: user.uid,
-              timestamp: Date.now()
-            });
-          })
-          .then(() => {
-            status.innerText = "✅ Berhasil mendaftar! Periksa email untuk verifikasi.";
-            status.style.color = "green";
-            setTimeout(() => window.location.href = "index.html", 2000);
-          })
-          .catch(err => {
-            status.innerText = "❌ " + err.message;
-            status.style.color = "red";
-          });
-      });
-    }
-
-    function registerWithGoogle() {
-      if (!userIP) {
-        status.innerText = "❗ Proses....";
-        status.style.color = "red";
-        return;
-      }
-
-      checkIPBeforeRegister((ipRef) => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider)
-          .then(result => {
-            const user = result.user;
-            return ipRef.set({
-              uid: user.uid,
-              timestamp: Date.now()
-            });
-          })
-          .then(() => {
-            status.innerText = "✅ Berhasil daftar dengan Google.";
-            status.style.color = "green";
-            setTimeout(() => window.location.href = "index.html", 1500);
-          })
-          .catch(err => {
-            status.innerText = "❌ Gagal daftar Google: " + err.message;
-            status.style.color = "red";
-          });
-      });
+      firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          status.innerText = "✅ Berhasil mendaftar, mengalihkan...";
+          status.style.color = "green";
+          setTimeout(() => window.location.href = "index.html", 1000);
+        })
+        .catch(err => {
+          status.innerText = "❌ " + err.message;
+          status.style.color = "red";
+        });
     }
   </script>
 </body>
