@@ -81,7 +81,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- FingerprintJS (open source) -->
+  <!-- FingerprintJS -->
   <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
 </head>
 <body>
@@ -89,8 +89,8 @@
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button onclick="register()">📥 Daftar dengan Email</button>
-    <button class="google-btn" onclick="registerWithGoogle()">
+    <button onclick="register()">📥 Daftar Manual</button>
+    <button class="google-btn" id="google-btn" onclick="registerWithGoogle()" disabled>
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
       Daftar dengan Google
     </button>
@@ -108,6 +108,8 @@
       fp.get().then(result => {
         fingerprintID = result.visitorId;
         console.log("Fingerprint ID:", fingerprintID);
+        // Aktifkan tombol Google saat fingerprint siap
+        document.getElementById("google-btn").disabled = false;
       });
     });
 
@@ -141,16 +143,12 @@
           showStatus("⚠️ Perangkat ini sudah digunakan untuk mendaftar.");
         } else {
           firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then(cred => {
-              return fpRef.set({ uid: cred.user.uid });
-            })
+            .then(cred => fpRef.set({ uid: cred.user.uid }))
             .then(() => {
               showStatus("✅ Berhasil mendaftar. Mengalihkan...", true);
               setTimeout(() => window.location.href = "index.html", 1000);
             })
-            .catch(err => {
-              showStatus("❌ " + err.message);
-            });
+            .catch(err => showStatus("❌ " + err.message));
         }
       });
     }
@@ -167,7 +165,6 @@
         .then(cred => {
           const uid = cred.user.uid;
           const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
-
           return fpRef.once("value").then(snapshot => {
             const existingUID = snapshot.val()?.uid;
 
@@ -182,9 +179,7 @@
             }
           });
         })
-        .catch(err => {
-          showStatus("❌ Gagal daftar dengan Google: " + err.message);
-        });
+        .catch(err => showStatus("❌ Gagal daftar dengan Google: " + err.message));
     }
   </script>
 </body>
