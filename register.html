@@ -48,6 +48,19 @@
     button:hover {
       background-color: #005fa3;
     }
+    .google-btn {
+      background-color: white;
+      color: #333;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .google-btn img {
+      height: 20px;
+      margin-right: 10px;
+    }
     .status {
       text-align: center;
       margin-top: 1rem;
@@ -74,7 +87,13 @@
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button onclick="register()">📥 Daftar</button>
+    <button onclick="registerManual()">📥 Daftar Manual</button>
+
+    <button class="google-btn" onclick="registerWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+      Daftar dengan Google
+    </button>
+
     <div class="status" id="status"></div>
     <div class="link">
       Sudah punya akun? <a href="login.html">Login</a>
@@ -82,7 +101,31 @@
   </div>
 
   <script>
-    async function register() {
+    async function getIP() {
+      const res = await fetch("https://api.ipify.org?format=json");
+      const data = await res.json();
+      return data.ip;
+    }
+
+    async function checkIP(ip) {
+      const ref = firebase.database().ref("ip_register/" + ip);
+      const snap = await ref.once("value");
+      if (!snap.exists()) return true;
+
+      const data = snap.val();
+      const now = Date.now();
+      const oneYear = 365 * 24 * 60 * 60 * 1000;
+      return (now - data.timestamp >= oneYear);
+    }
+
+    async function saveIP(ip, uid) {
+      await firebase.database().ref("ip_register/" + ip).set({
+        uid: uid,
+        timestamp: Date.now()
+      });
+    }
+
+    async function registerManual() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       const status = document.getElementById("status");
@@ -93,51 +136,62 @@
         return;
       }
 
-      // Cek LocalStorage apakah browser ini sudah pernah digunakan
       if (localStorage.getItem("registered")) {
-        status.innerText = "❌ Browser ini sudah digunakan untuk mendaftar akun.";
+        status.innerText = "❌ Perangkat ini sudah digunakan untuk mendaftar akun.";
         status.style.color = "red";
         return;
       }
 
       try {
-        // Ambil IP publik
-        const ipRes = await fetch("https://api.ipify.org?format=json");
-        const ipData = await ipRes.json();
-        const ip = ipData.ip;
-
-        const ipRef = firebase.database().ref("ip_register/" + ip);
-        const snapshot = await ipRef.once("value");
-
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const now = Date.now();
-          const oneYear = 365 * 24 * 60 * 60 * 1000;
-
-          if (now - data.timestamp < oneYear) {
-            status.innerText = "❌ IP ini sudah digunakan untuk mendaftar akun dalam 1 tahun terakhir.";
-            status.style.color = "red";
-            return;
-          }
+        const ip = await getIP();
+        const allowed = await checkIP(ip);
+        if (!allowed) {
+          status.innerText = "❌ Hanya bisa daftar sekali.";
+          status.style.color = "red";
+          return;
         }
 
-        // Lanjut daftar akun
-        const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
-        const uid = userCred.user.uid;
+        const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        await cred.user.sendEmailVerification();
 
-        await userCred.user.sendEmailVerification();
-
-        // Simpan IP di database
-        await ipRef.set({
-          uid: uid,
-          timestamp: Date.now()
-        });
-
-        // Tandai perangkat
+        await saveIP(ip, cred.user.uid);
         localStorage.setItem("registered", "true");
 
         status.innerText = "✅ Berhasil mendaftar. Verifikasi email Anda sebelum login.";
         status.style.color = "green";
+      } catch (err) {
+        status.innerText = "❌ " + err.message;
+        status.style.color = "red";
+      }
+    }
+
+    async function registerWithGoogle() {
+      const status = document.getElementById("status");
+      if (localStorage.getItem("registered")) {
+        status.innerText = "❌ Perangkat ini sudah digunakan untuk mendaftar akun.";
+        status.style.color = "red";
+        return;
+      }
+
+      try {
+        const ip = await getIP();
+        const allowed = await checkIP(ip);
+        if (!allowed) {
+          status.innerText = "❌ Hanya bisa daftar sekali ";
+          status.style.color = "red";
+          return;
+        }
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await firebase.auth().signInWithPopup(provider);
+        const uid = result.user.uid;
+
+        await saveIP(ip, uid);
+        localStorage.setItem("registered", "true");
+
+        status.innerText = "✅ Berhasil mendaftar. Anda telah login.";
+        status.style.color = "green";
+        setTimeout(() => window.location.href = "index.html", 1000);
       } catch (err) {
         status.innerText = "❌ " + err.message;
         status.style.color = "red";
