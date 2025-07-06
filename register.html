@@ -66,7 +66,11 @@
   <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
+
+  <!-- FingerprintJS (Open Source CDN) -->
+  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
 </head>
 <body>
   <div class="container">
@@ -81,8 +85,18 @@
   </div>
 
   <script>
+    let fingerprintID = null;
+
     firebase.auth().onAuthStateChanged(user => {
       if (user) window.location.href = "index.html";
+    });
+
+    // Ambil fingerprint
+    FingerprintJS.load().then(fp => {
+      fp.get().then(result => {
+        fingerprintID = result.visitorId;
+        console.log("Fingerprint ID:", fingerprintID);
+      });
     });
 
     function register() {
@@ -96,16 +110,35 @@
         return;
       }
 
-      firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(() => {
-          status.innerText = "✅ Berhasil mendaftar, mengalihkan...";
-          status.style.color = "green";
-          setTimeout(() => window.location.href = "index.html", 1000);
-        })
-        .catch(err => {
-          status.innerText = "❌ " + err.message;
+      if (!fingerprintID) {
+        status.innerText = "❌ Fingerprint tidak bisa dimuat. Coba lagi.";
+        status.style.color = "red";
+        return;
+      }
+
+      const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
+      fpRef.once("value").then(snapshot => {
+        if (snapshot.exists()) {
+          status.innerText = "⚠️ Perangkat ini sudah digunakan untuk mendaftar sebelumnya.";
           status.style.color = "red";
-        });
+        } else {
+          // Lanjutkan registrasi
+          firebase.auth().createUserWithEmailAndPassword(email, password)
+            .then(cred => {
+              const uid = cred.user.uid;
+              return fpRef.set({ uid: uid });
+            })
+            .then(() => {
+              status.innerText = "✅ Berhasil mendaftar. Mengalihkan...";
+              status.style.color = "green";
+              setTimeout(() => window.location.href = "index.html", 1000);
+            })
+            .catch(err => {
+              status.innerText = "❌ " + err.message;
+              status.style.color = "red";
+            });
+        }
+      });
     }
   </script>
 </body>
