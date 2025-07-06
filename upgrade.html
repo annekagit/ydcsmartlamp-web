@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Upgrade Akun - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #d0e6ff, #f3faff);
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #0077cc;
+      margin-bottom: 2rem;
+    }
+    .plans {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      width: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #0077cc;
+    }
+    .price {
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
+      font-weight: bold;
+    }
+    .features {
+      font-size: 0.95rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: #555;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    #status {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+  <!-- Konfigurasi Firebase -->
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h1>🚀 Upgrade Akun Anda</h1>
+  <div class="plans">
+    <div class="card">
+      <h2>Basic</h2>
+      <div class="price">Gratis</div>
+      <div class="features">
+        - Maks. 3 perangkat<br>
+        - Akses dasar
+      </div>
+      <button disabled>✔ Saat Ini</button>
+    </div>
+
+    <div class="card">
+      <h2>Standard</h2>
+      <div class="price">Rp50.000/tahun</div>
+      <div class="features">
+        - Maks. 6 perangkat<br>
+        - Dukungan lebih baik
+      </div>
+      <button onclick="upgrade('standard', 50000)">Upgrade</button>
+    </div>
+
+    <div class="card">
+      <h2>Premium</h2>
+      <div class="price">Rp100.000/tahun</div>
+      <div class="features">
+        - Perangkat tanpa batas<br>
+        - Semua fitur terbuka
+      </div>
+      <button onclick="upgrade('premium', 100000)">Upgrade</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <script>
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+    });
+
+    function upgrade(type, price) {
+      const konfirmasi = confirm(`Lanjutkan upgrade ke paket ${type.toUpperCase()} dengan biaya Rp${price.toLocaleString()}/tahun?`);
+
+      if (!konfirmasi) return;
+
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        alert("Silakan login terlebih dahulu.");
+        return;
+      }
+
+      // Simulasi pembayaran dummy sukses
+      const now = new Date();
+      const nextYear = new Date(now);
+      nextYear.setFullYear(now.getFullYear() + 1);
+
+      const formattedDate = nextYear.toISOString().split('T')[0];
+
+      const ref = firebase.database().ref("users/" + user.uid);
+      ref.update({
+        accountType: type,
+        subscriptionUntil: formattedDate
+      })
+      .then(() => {
+        document.getElementById("status").innerText = `✅ Berhasil upgrade ke paket ${type.toUpperCase()}. Berlaku hingga ${formattedDate}`;
+      })
+      .catch(err => {
+        alert("Gagal upgrade: " + err.message);
+      });
+    }
+  </script>
+</body>
+</html>
