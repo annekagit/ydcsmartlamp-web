@@ -127,6 +127,17 @@
       from { transform: translateY(50px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+    .cancel-text {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+.cancel-text:hover {
+  color: #000;
+}
   </style>
 
   <!-- Firebase SDK v8 -->
@@ -162,7 +173,7 @@
       <p>Batas maksimal perangkat (3 unit) telah tercapai.<br>Untuk menambahkan lebih banyak perangkat, silakan upgrade akun Anda.</p>
       <button onclick="window.location.href='upgrade.html'">🔓 Upgrade Sekarang</button>
       <br>
-      <button type="button" onclick="closeModal()">Batal</button>
+      <a onclick="closeModal()" class="cancel-text">Batal</a>
     </div>
   </div>
 
