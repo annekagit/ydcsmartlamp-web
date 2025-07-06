@@ -48,18 +48,6 @@
     button:hover {
       background-color: #005fa3;
     }
-    .google-btn {
-      background-color: #ffffff;
-      color: #333;
-      border: 1px solid #ccc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .google-btn img {
-      height: 20px;
-      margin-right: 10px;
-    }
     .status {
       text-align: center;
       margin-top: 1rem;
@@ -80,20 +68,13 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
-
-  <!-- FingerprintJS UMD -->
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button onclick="register()">📥 Daftar Manual</button>
-    <button class="google-btn" id="google-btn" onclick="registerWithGoogle()" disabled>
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
-      Daftar dengan Google
-    </button>
+    <button onclick="register()">📥 Daftar</button>
     <div class="status" id="status"></div>
     <div class="link">
       Sudah punya akun? <a href="login.html">Login</a>
@@ -101,91 +82,66 @@
   </div>
 
   <script>
-    let fingerprintID = null;
-
-    function showStatus(message, success = false) {
-      const status = document.getElementById("status");
-      status.innerText = message;
-      status.style.color = success ? "green" : "red";
-    }
-
-    // FingerprintJS init
-    const fpPromise = FingerprintJS.load();
-
-    fpPromise
-      .then(fp => fp.get())
-      .then(result => {
-        fingerprintID = result.visitorId;
-        console.log("Fingerprint ID:", fingerprintID);
-        document.getElementById("google-btn").disabled = false;
-      })
-      .catch(err => {
-        console.error("Gagal memuat fingerprint:", err);
-        showStatus("⚠️ Gagal memuat fingerprint. Silakan refresh halaman.");
-        document.getElementById("google-btn").disabled = true;
-      });
-
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) window.location.href = "index.html";
-    });
-
-    function register() {
+    async function register() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
+      const status = document.getElementById("status");
 
       if (!email || !password) {
-        showStatus("❗ Email dan password wajib diisi.");
+        status.innerText = "❗ Email dan password wajib diisi.";
+        status.style.color = "red";
         return;
       }
 
-      if (!fingerprintID) {
-        showStatus("❌ Fingerprint perangkat belum siap.");
+      // Cek LocalStorage apakah browser ini sudah pernah digunakan
+      if (localStorage.getItem("registered")) {
+        status.innerText = "❌ Browser ini sudah digunakan untuk mendaftar akun.";
+        status.style.color = "red";
         return;
       }
 
-      const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
-      fpRef.once("value").then(snapshot => {
+      try {
+        // Ambil IP publik
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipRes.json();
+        const ip = ipData.ip;
+
+        const ipRef = firebase.database().ref("ip_register/" + ip);
+        const snapshot = await ipRef.once("value");
+
         if (snapshot.exists()) {
-          showStatus("⚠️ Perangkat ini sudah digunakan untuk mendaftar.");
-        } else {
-          firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then(cred => fpRef.set({ uid: cred.user.uid }))
-            .then(() => {
-              showStatus("✅ Berhasil mendaftar. Mengalihkan...", true);
-              setTimeout(() => window.location.href = "index.html", 1000);
-            })
-            .catch(err => showStatus("❌ " + err.message));
+          const data = snapshot.val();
+          const now = Date.now();
+          const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+          if (now - data.timestamp < oneYear) {
+            status.innerText = "❌ IP ini sudah digunakan untuk mendaftar akun dalam 1 tahun terakhir.";
+            status.style.color = "red";
+            return;
+          }
         }
-      });
-    }
 
-    function registerWithGoogle() {
-      if (!fingerprintID) {
-        showStatus("❌ Fingerprint perangkat belum siap.");
-        return;
+        // Lanjut daftar akun
+        const userCred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+        const uid = userCred.user.uid;
+
+        await userCred.user.sendEmailVerification();
+
+        // Simpan IP di database
+        await ipRef.set({
+          uid: uid,
+          timestamp: Date.now()
+        });
+
+        // Tandai perangkat
+        localStorage.setItem("registered", "true");
+
+        status.innerText = "✅ Berhasil mendaftar. Verifikasi email Anda sebelum login.";
+        status.style.color = "green";
+      } catch (err) {
+        status.innerText = "❌ " + err.message;
+        status.style.color = "red";
       }
-
-      const provider = new firebase.auth.GoogleAuthProvider();
-
-      firebase.auth().signInWithPopup(provider)
-        .then(cred => {
-          const uid = cred.user.uid;
-          const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
-          return fpRef.once("value").then(snapshot => {
-            const existingUID = snapshot.val()?.uid;
-
-            if (existingUID && existingUID !== uid) {
-              showStatus("⚠️ Perangkat ini sudah digunakan untuk akun lain.");
-              return firebase.auth().signOut();
-            } else {
-              return fpRef.set({ uid: uid }).then(() => {
-                showStatus("✅ Berhasil daftar dengan Google. Mengalihkan...", true);
-                setTimeout(() => window.location.href = "index.html", 1000);
-              });
-            }
-          });
-        })
-        .catch(err => showStatus("❌ Gagal daftar dengan Google: " + err.message));
     }
   </script>
 </body>
