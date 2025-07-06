@@ -81,15 +81,15 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- FingerprintJS -->
-  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+  <!-- FingerprintJS UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button onclick="register()">📥 Daftar dengan Email</button>
+    <button onclick="register()">📥 Daftar Manual</button>
     <button class="google-btn" id="google-btn" onclick="registerWithGoogle()" disabled>
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
       Daftar dengan Google
@@ -103,25 +103,31 @@
   <script>
     let fingerprintID = null;
 
-    // Ambil fingerprint saat halaman dimuat
-    FingerprintJS.load().then(fp => {
-      fp.get().then(result => {
-        fingerprintID = result.visitorId;
-        console.log("Fingerprint ID:", fingerprintID);
-        // Aktifkan tombol Google saat fingerprint siap
-        document.getElementById("google-btn").disabled = false;
-      });
-    });
-
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) window.location.href = "index.html";
-    });
-
     function showStatus(message, success = false) {
       const status = document.getElementById("status");
       status.innerText = message;
       status.style.color = success ? "green" : "red";
     }
+
+    // FingerprintJS init
+    const fpPromise = FingerprintJS.load();
+
+    fpPromise
+      .then(fp => fp.get())
+      .then(result => {
+        fingerprintID = result.visitorId;
+        console.log("Fingerprint ID:", fingerprintID);
+        document.getElementById("google-btn").disabled = false;
+      })
+      .catch(err => {
+        console.error("Gagal memuat fingerprint:", err);
+        showStatus("⚠️ Gagal memuat fingerprint. Silakan refresh halaman.");
+        document.getElementById("google-btn").disabled = true;
+      });
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
 
     function register() {
       const email = document.getElementById("email").value.trim();
@@ -133,7 +139,7 @@
       }
 
       if (!fingerprintID) {
-        showStatus("❌ Fingerprint perangkat gagal dimuat.");
+        showStatus("❌ Fingerprint perangkat belum siap.");
         return;
       }
 
@@ -155,7 +161,7 @@
 
     function registerWithGoogle() {
       if (!fingerprintID) {
-        showStatus("❌ Fingerprint perangkat gagal dimuat.");
+        showStatus("❌ Fingerprint perangkat belum siap.");
         return;
       }
 
