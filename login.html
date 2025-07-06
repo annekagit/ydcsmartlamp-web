@@ -112,16 +112,16 @@
       el.style.color = success ? "green" : "red";
     }
 
-    // Inisialisasi FingerprintJS
+    // Inisialisasi fingerprint
     FingerprintJS.load()
       .then(fp => fp.get())
       .then(result => {
         fingerprintID = result.visitorId;
-        console.log("🧬 Fingerprint:", fingerprintID);
+        console.log("✅ Fingerprint berhasil diambil:", fingerprintID);
         document.getElementById("google-btn").disabled = false;
       })
       .catch(err => {
-        console.error("FingerprintJS error:", err);
+        console.error("❌ FingerprintJS gagal dimuat:", err);
         showStatus("❌ Gagal memuat fingerprint.");
       });
 
@@ -159,35 +159,37 @@
         return;
       }
 
+      console.log("🟡 Memulai login dengan Google...");
       const provider = new firebase.auth.GoogleAuthProvider();
       firebase.auth().signInWithPopup(provider)
         .then(cred => {
           const uid = cred.user.uid;
           const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
-          console.log("🔍 UID login:", uid);
+
+          console.log("👤 UID Google:", uid);
+          console.log("📍 Fingerprint:", fingerprintID);
 
           return fpRef.transaction(current => {
-            console.log("📦 UID fingerprint lama:", current?.uid);
+            console.log("🔎 Data fingerprint di Firebase:", current);
             if (!current || current.uid === uid) {
-              return { uid: uid }; // Hanya jika kosong atau milik sendiri
+              return { uid: uid }; // set jika baru / cocok
             } else {
               showStatus("⚠️ Perangkat ini sudah digunakan akun lain.");
-              setTimeout(() => firebase.auth().signOut(), 500);
-              return; // Batalkan transaksi
+              setTimeout(() => firebase.auth().signOut(), 800);
+              return; // batalkan transaction
+            }
+          }).then(result => {
+            console.log("📊 Hasil transaction:", result);
+            if (result && result.committed) {
+              showStatus("✅ Login berhasil. Mengalihkan...", true);
+              setTimeout(() => window.location.href = "index.html", 1000);
+            } else {
+              console.warn("⛔ Login dibatalkan karena fingerprint sudah digunakan akun lain.");
             }
           });
         })
-        .then(result => {
-          if (result && result.committed) {
-            console.log("✅ Login dan fingerprint berhasil disimpan.");
-            showStatus("✅ Login berhasil, mengalihkan...", true);
-            setTimeout(() => window.location.href = "index.html", 1000);
-          } else {
-            console.warn("⛔ Fingerprint ditolak oleh sistem.");
-          }
-        })
         .catch(err => {
-          console.error("❌ Error login Google:", err);
+          console.error("❌ Gagal login Google:", err);
           showStatus("❌ Gagal login Google: " + err.message);
         });
     }
