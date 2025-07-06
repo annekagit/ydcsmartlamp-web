@@ -48,6 +48,18 @@
     button:hover {
       background-color: #005fa3;
     }
+    .google-btn {
+      background-color: #ffffff;
+      color: #333;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .google-btn img {
+      height: 20px;
+      margin-right: 10px;
+    }
     .status {
       text-align: center;
       margin-top: 1rem;
@@ -69,7 +81,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 
-  <!-- FingerprintJS (Open Source CDN) -->
+  <!-- FingerprintJS (open source) -->
   <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
 </head>
 <body>
@@ -77,7 +89,11 @@
     <h1>Daftar</h1>
     <input type="email" id="email" placeholder="Email" />
     <input type="password" id="password" placeholder="Password (min 6 karakter)" />
-    <button onclick="register()">📥 Daftar</button>
+    <button onclick="register()">📥 Daftar dengan Email</button>
+    <button class="google-btn" onclick="registerWithGoogle()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
+      Daftar dengan Google
+    </button>
     <div class="status" id="status"></div>
     <div class="link">
       Sudah punya akun? <a href="login.html">Login</a>
@@ -87,11 +103,7 @@
   <script>
     let fingerprintID = null;
 
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) window.location.href = "index.html";
-    });
-
-    // Ambil fingerprint
+    // Ambil fingerprint saat halaman dimuat
     FingerprintJS.load().then(fp => {
       fp.get().then(result => {
         fingerprintID = result.visitorId;
@@ -99,46 +111,80 @@
       });
     });
 
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
+
+    function showStatus(message, success = false) {
+      const status = document.getElementById("status");
+      status.innerText = message;
+      status.style.color = success ? "green" : "red";
+    }
+
     function register() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
-      const status = document.getElementById("status");
 
       if (!email || !password) {
-        status.innerText = "❗ Email dan password wajib diisi.";
-        status.style.color = "red";
+        showStatus("❗ Email dan password wajib diisi.");
         return;
       }
 
       if (!fingerprintID) {
-        status.innerText = "❌ Fingerprint tidak bisa dimuat. Coba lagi.";
-        status.style.color = "red";
+        showStatus("❌ Fingerprint perangkat gagal dimuat.");
         return;
       }
 
       const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
       fpRef.once("value").then(snapshot => {
         if (snapshot.exists()) {
-          status.innerText = "⚠️ Perangkat ini sudah digunakan untuk mendaftar sebelumnya.";
-          status.style.color = "red";
+          showStatus("⚠️ Perangkat ini sudah digunakan untuk mendaftar.");
         } else {
-          // Lanjutkan registrasi
           firebase.auth().createUserWithEmailAndPassword(email, password)
             .then(cred => {
-              const uid = cred.user.uid;
-              return fpRef.set({ uid: uid });
+              return fpRef.set({ uid: cred.user.uid });
             })
             .then(() => {
-              status.innerText = "✅ Berhasil mendaftar. Mengalihkan...";
-              status.style.color = "green";
+              showStatus("✅ Berhasil mendaftar. Mengalihkan...", true);
               setTimeout(() => window.location.href = "index.html", 1000);
             })
             .catch(err => {
-              status.innerText = "❌ " + err.message;
-              status.style.color = "red";
+              showStatus("❌ " + err.message);
             });
         }
       });
+    }
+
+    function registerWithGoogle() {
+      if (!fingerprintID) {
+        showStatus("❌ Fingerprint perangkat gagal dimuat.");
+        return;
+      }
+
+      const provider = new firebase.auth.GoogleAuthProvider();
+
+      firebase.auth().signInWithPopup(provider)
+        .then(cred => {
+          const uid = cred.user.uid;
+          const fpRef = firebase.database().ref("fingerprints/" + fingerprintID);
+
+          return fpRef.once("value").then(snapshot => {
+            const existingUID = snapshot.val()?.uid;
+
+            if (existingUID && existingUID !== uid) {
+              showStatus("⚠️ Perangkat ini sudah digunakan untuk akun lain.");
+              return firebase.auth().signOut();
+            } else {
+              return fpRef.set({ uid: uid }).then(() => {
+                showStatus("✅ Berhasil daftar dengan Google. Mengalihkan...", true);
+                setTimeout(() => window.location.href = "index.html", 1000);
+              });
+            }
+          });
+        })
+        .catch(err => {
+          showStatus("❌ Gagal daftar dengan Google: " + err.message);
+        });
     }
   </script>
 </body>
