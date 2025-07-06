@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f9ff; padding: 2rem; margin: 0; }
+    h1 { text-align: center; color: #0077cc; }
+    input[type="search"] { width: 100%; max-width: 400px; padding: 0.6rem; margin: 1rem auto; display: block; border: 1px solid #ccc; border-radius: 6px; }
+    #download-btn, .btn-notif { display: block; margin: 0 auto 1rem; background-color: #28a745; color: white; padding: 0.6rem 1.2rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    #userTable { width: 100%; max-width: 960px; margin: auto; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 0.75rem; }
+    th { background-color: #e9f5ff; }
+    td select, td button { margin-right: 0.4rem; }
+    button { padding: 0.4rem 0.6rem; border-radius: 6px; border: none; cursor: pointer; }
+    .btn-update { background-color: #007bff; color: white; }
+    .btn-delete { background-color: #dc3545; color: white; }
+    .btn-reset { background-color: #ffc107; color: black; }
+    .btn-block { background-color: #6c757d; color: white; }
+    #status { text-align: center; margin-top: 1rem; font-weight: bold; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h1>Admin Panel - YDC Smartlamp</h1>
+  <input type="search" id="searchInput" placeholder="🔍 Cari email pengguna..." />
+  <button id="download-btn" onclick="downloadCSV()">📥 Unduh Audit Log CSV</button>
+  <button class="btn-notif" onclick="checkNotifications()">🔔 Notifikasi Admin</button>
+  <div id="status">Memuat pengguna...</div>  <table id="userTable" style="display:none;">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Tipe Akun</th>
+        <th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="userTbody"></tbody>
+  </table>  <script>
+    let adminUID = "";
+    let usersData = {};
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return location.href = "login.html";
+      adminUID = user.uid;
+
+      firebase.database().ref("admins/" + adminUID).once("value").then(snap => {
+        if (!snap.exists()) return document.getElementById("status").innerText = "❌ Anda bukan admin.";
+        loadUsers();
+      });
+    });
+
+    function loadUsers() {
+      const tbody = document.getElementById("userTbody");
+      const table = document.getElementById("userTable");
+      const status = document.getElementById("status");
+
+      firebase.database().ref("users").once("value").then(snapshot => {
+        usersData = snapshot.val() || {};
+        tbody.innerHTML = "";
+
+        Object.entries(usersData).forEach(([uid, data]) => {
+          const email = data.email || "-";
+          const type = data.type || "basic";
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${email}</td>
+            <td>
+              <select id="select-${uid}">
+                <option value="basic" ${type === "basic" ? "selected" : ""}>Basic</option>
+                <option value="standard" ${type === "standard" ? "selected" : ""}>Standard</option>
+                <option value="premium" ${type === "premium" ? "selected" : ""}>Premium</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn-update" onclick="updateType('${uid}')">Simpan</button>
+              <button class="btn-reset" onclick="resetDevices('${uid}')">Reset</button>
+              <button class="btn-delete" onclick="recycleUser('${uid}', '${email}')">Buang</button>
+              <button class="btn-block" onclick="blockUser('${uid}', '${email}')">Blokir</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        table.style.display = "table";
+        status.innerText = "";
+      });
+    }
+
+    function updateType(uid) {
+      const select = document.getElementById(`select-${uid}`);
+      const newType = select.value;
+      const oldType = usersData[uid].type;
+      const email = usersData[uid].email;
+
+      if (newType === oldType) return alert("⚠️ Tipe akun tidak berubah.");
+
+      if (newType === "basic") {
+        firebase.database().ref("devices/" + uid).once("value").then(snap => {
+          if (snap.numChildren() > 3) {
+            return alert("❌ Tidak bisa ubah ke Basic. Pengguna punya lebih dari 3 perangkat.");
+          }
+          applyUpdate(uid, oldType, newType, email);
+        });
+      } else {
+        applyUpdate(uid, oldType, newType, email);
+      }
+    }
+
+    function applyUpdate(uid, oldType, newType, email) {
+      firebase.database().ref("users/" + uid + "/type").set(newType).then(() => {
+        const log = { user: uid, email: email, old: oldType, new: newType, timestamp: new Date().toISOString() };
+        const ts = Date.now();
+        firebase.database().ref("audit_logs/" + adminUID + "/" + ts).set(log);
+        alert("✅ Tipe akun diperbarui.");
+        loadUsers();
+      });
+    }
+
+    function resetDevices(uid) {
+      if (!confirm("Yakin reset seluruh perangkat pengguna ini?")) return;
+      firebase.database().ref("devices/" + uid).remove().then(() => alert("✅ Semua perangkat berhasil dihapus."));
+    }
+
+    function recycleUser(uid, email) {
+      if (!confirm(`Buang akun ${email} ke recycle bin?`)) return;
+      firebase.database().ref("recycle_bin/" + uid).set(usersData[uid]).then(() => {
+        firebase.database().ref("users/" + uid).remove();
+        alert("♻️ Pengguna dipindahkan ke recycle bin.");
+        loadUsers();
+      });
+    }
+
+    function blockUser(uid, email) {
+      const ip = prompt("Masukkan IP pengguna yang ingin diblokir:");
+      if (!ip) return alert("❌ IP tidak boleh kosong.");
+      firebase.database().ref("blocked_ips/" + ip).set({ uid: uid, email: email, time: new Date().toISOString() }).then(() => alert("🚫 IP berhasil diblokir."));
+    }
+
+    function checkNotifications() {
+      firebase.database().ref("admin_notifications/" + adminUID).once("value").then(snap => {
+        if (!snap.exists()) return alert("Tidak ada notifikasi baru.");
+        let msg = "📨 Notifikasi:\n\n";
+        snap.forEach(child => {
+          const note = child.val();
+          msg += `• ${note.time} - ${note.message}\n`;
+        });
+        alert(msg);
+      });
+    }
+
+    function downloadCSV() {
+      firebase.database().ref("audit_logs/" + adminUID).once("value").then(snap => {
+        if (!snap.exists()) return alert("⚠️ Tidak ada log audit.");
+        let csv = "Waktu,Email Pengguna,UID,Status Lama,Status Baru\n";
+        snap.forEach(child => {
+          const d = child.val();
+          csv += `"${d.timestamp}","${d.email}","${d.user}","${d.old}","${d.new}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "audit_log.csv";
+        link.click();
+      });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", function () {
+      const keyword = this.value.toLowerCase();
+      const rows = document.querySelectorAll("#userTbody tr");
+      rows.forEach(row => {
+        const email = row.cells[0].innerText.toLowerCase();
+        row.style.display = email.includes(keyword) ? "" : "none";
+      });
+    });
+  </script></body>
+</html>
