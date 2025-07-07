@@ -121,8 +121,9 @@
 
       <h3>⏱ Jadwal</h3>
       <div id="current-schedule" style="margin:1rem 0; font-weight:bold; color:#333;">
-        ⏳ Jadwal Aktif: Tidak ada
-      </div>
+  ⏳ Jadwal Aktif:
+  <ul id="schedule-list" style="margin-top:0.5rem; padding-left:20px; color:#0077cc;"></ul>
+</div>
       <form onsubmit="setSchedule(event)">
         <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
         <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
@@ -179,26 +180,33 @@
           document.getElementById("mqtt-status").innerText = "❌ MQTT Gagal";
         }
       });
-
+      
       client.onMessageArrived = message => {
-        if (!selectedDevice) return;
-        const expectedStatus = `smartlamp/status/${selectedDevice}`;
-        const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
-        if (message.destinationName === expectedStatus) {
-          const statusText = message.payloadString;
-          document.getElementById("lamp-status").innerText = statusText;
-          updateLampIcon(statusText);
-        } else if (message.destinationName === expectedSchedule) {
-          const payload = message.payloadString;
-          if (payload === "clear_schedule") {
-            document.getElementById("current-schedule").innerText = "⏳ Jadwal Aktif: Tidak ada";
-          } else {
-            const [time, action] = payload.split("=");
-            document.getElementById("current-schedule").innerText = `⏳ Jadwal Aktif: ${time} untuk ${action}`;
-          }
-        }
-      };
+  if (!selectedDevice) return;
+  const expectedStatus = `smartlamp/status/${selectedDevice}`;
+  const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
+  const expectedScheduleStatus = `smartlamp/schedule_status/${selectedDevice}`;
+
+  if (message.destinationName === expectedStatus) {
+    const statusText = message.payloadString;
+    document.getElementById("lamp-status").innerText = statusText;
+    updateLampIcon(statusText);
+  } else if (message.destinationName === expectedSchedule) {
+    const payload = message.payloadString;
+    if (payload === "clear_schedule") {
+      document.getElementById("schedule-list").innerHTML = "";
     }
+  } else if (message.destinationName === expectedScheduleStatus) {
+    const payload = message.payloadString;
+    const list = document.getElementById("schedule-list");
+    const item = document.createElement("li");
+    item.textContent = payload;
+
+    // Hindari duplikat jadwal
+    const exists = Array.from(list.children).some(li => li.textContent === payload);
+    if (!exists) list.appendChild(item);
+  }
+};
 
     function updateLampIcon(status) {
       const iconContainer = document.getElementById("lamp-icon");
@@ -278,7 +286,7 @@
         return;
       }
       client.subscribe(`smartlamp/status/${selectedDevice}`);
-      client.subscribe(`smartlamp/schedule/${selectedDevice}`);
+      client.subscribe(`smartlamp/schedule_status/${selectedDevice}`);
       document.getElementById("control-section").style.display = "block";
       requestLampStatus();
     }
