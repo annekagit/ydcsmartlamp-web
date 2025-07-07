@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Promosi User - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #eef7ff;
+      margin: 0;
+      padding: 2rem;
+    }
+    h1 {
+      text-align: center;
+      color: #0077cc;
+    }
+    .user-list {
+      max-width: 600px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    .user-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #eee;
+    }
+    .user-item:last-child {
+      border-bottom: none;
+    }
+    .promote-btn {
+      padding: 0.4rem 1rem;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .promote-btn:hover {
+      background: #218838;
+    }
+    .info {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h1>👑 Promosi User menjadi Admin</h1>
+  <div class="user-list" id="userList">Memuat data...</div>
+  <div class="info" id="infoText"></div>
+
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return location.href = "login.html";
+
+      const uid = user.uid;
+      const userRef = firebase.database().ref("users/" + uid);
+
+      userRef.once("value").then(snapshot => {
+        const role = snapshot.val()?.role;
+        if (role !== "admin") return location.href = "index.html"; // Redirect non-admin
+        loadUsers();
+      });
+    });
+
+    function loadUsers() {
+      const list = document.getElementById("userList");
+      firebase.database().ref("users").once("value").then(snapshot => {
+        list.innerHTML = "";
+        let count = 0;
+
+        snapshot.forEach(child => {
+          const data = child.val();
+          if (data.role === "user") {
+            const div = document.createElement("div");
+            div.className = "user-item";
+            div.innerHTML = `
+              <span>${data.email}</span>
+              <button class="promote-btn" onclick="promoteUser('${child.key}')">Promosikan</button>
+            `;
+            list.appendChild(div);
+            count++;
+          }
+        });
+
+        if (count === 0) {
+          list.innerHTML = "<p style='text-align:center;'>Tidak ada user yang bisa dipromosikan.</p>";
+        }
+      });
+    }
+
+    function promoteUser(uid) {
+      firebase.database().ref("users/" + uid + "/role").set("admin")
+        .then(() => {
+          document.getElementById("infoText").innerText = "✅ User berhasil dipromosikan.";
+          loadUsers();
+        })
+        .catch(err => {
+          document.getElementById("infoText").innerText = "❌ Gagal mempromosikan: " + err.message;
+        });
+    }
+  </script>
+</body>
+</html>
