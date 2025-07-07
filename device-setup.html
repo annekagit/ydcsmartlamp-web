@@ -67,8 +67,6 @@
       color: #555;
       font-size: 0.95rem;
     }
-
-    /* Modal Styling */
     #upgradeModal {
       display: none;
       position: fixed;
@@ -118,7 +116,6 @@
       font-size: 0.9rem;
       cursor: pointer;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -128,45 +125,34 @@
       to { transform: translateY(0); opacity: 1; }
     }
     .cancel-text {
-  display: inline-block;
-  margin-top: 1rem;
-  color: #666;
-  cursor: pointer;
-  font-size: 0.9rem;
-  text-decoration: underline;
-}
-.cancel-text:hover {
-  color: #000;
-}
+      display: inline-block;
+      margin-top: 1rem;
+      color: #666;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-decoration: underline;
+    }
+    .cancel-text:hover {
+      color: #000;
+    }
   </style>
-
-  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-  <!-- Konfigurasi Firebase -->
   <script src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
     <a href="index.html" style="position:left; top:16px; text-decoration:none; color:#0077cc; font-size:0.9rem;">← Kembali</a>
     <h1>🔧 Tambah Perangkat</h1>
-
     <div id="device-count">Memuat data perangkat...</div>
-
     <label for="device-id">Device ID (cth: abc123):</label>
     <input type="text" id="device-id" placeholder="Masukkan Device ID">
-
     <label for="device-name">Nama Perangkat:</label>
     <input type="text" id="device-name" placeholder="Contoh: Lampu Kamar">
-
     <button id="submit">➕ Simpan Perangkat</button>
-
     <div id="status"></div>
   </div>
-
-  <!-- Modal -->
   <div id="upgradeModal">
     <div class="modal-content">
       <h2>Upgrade Akun 📈</h2>
@@ -176,18 +162,13 @@
       <a onclick="closeModal()" class="cancel-text">Batal</a>
     </div>
   </div>
-
   <script>
     const BASIC_LIMIT = 3;
     function closeModal() {
-    document.getElementById("upgradeModal").style.display = "none";
-  }
-
+      document.getElementById("upgradeModal").style.display = "none";
+    }
     firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
+      if (!user) return window.location.href = "login.html";
 
       const userRef = firebase.database().ref("users/" + user.uid);
       const userDevicesRef = firebase.database().ref("devices/" + user.uid);
@@ -195,8 +176,8 @@
 
       let maxDevices = BASIC_LIMIT;
 
-      userRef.on("value").then(snapshot => {
-        const accountType = snapshot.val()?.type || "basic";
+      userRef.on("value", snapshot => {
+        const accountType = snapshot.val()?.accountType || "basic";
         if (accountType === "standard") maxDevices = 6;
         else if (accountType === "premium") maxDevices = Infinity;
 
@@ -248,7 +229,6 @@
       function showUpgradeModal() {
         document.getElementById("upgradeModal").style.display = "flex";
       }
-
     });
   </script>
 </body>
