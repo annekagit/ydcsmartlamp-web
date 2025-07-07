@@ -2,30 +2,26 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Admin Panel - YDC Smartlamp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - YDC Smartlamp</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
       margin: 0;
-      padding: 1rem;
-      background: #f5f9ff;
+      padding: 2rem;
     }
     h1 {
       color: #0077cc;
       text-align: center;
     }
-    #admin-panel {
-      max-width: 1000px;
+    .container {
+      max-width: 960px;
       margin: auto;
-    }
-    input {
-      padding: 0.5rem;
-      margin: 0.5rem 0;
-      width: 100%;
-      max-width: 300px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
     table {
       width: 100%;
@@ -34,164 +30,91 @@
     }
     th, td {
       padding: 0.75rem;
-      border-bottom: 1px solid #ddd;
       text-align: left;
+      border-bottom: 1px solid #ddd;
     }
     th {
-      background-color: #0077cc;
-      color: white;
+      background: #f5f9ff;
+      color: #0077cc;
     }
-    button {
-      padding: 0.4rem 0.8rem;
-      margin: 2px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .promote { background: #4caf50; color: white; }
-    .reset { background: #f0ad4e; color: white; }
-    .delete { background: #d9534f; color: white; }
-    .block { background: #6c757d; color: white; }
-    .download { background: #0077cc; color: white; margin: 1rem 0; }
-    .note {
-      font-size: 0.9rem;
-      color: #555;
-      margin-bottom: 0.5rem;
+    .status {
+      text-align: center;
+      margin-top: 1rem;
+      color: red;
+      font-weight: bold;
     }
   </style>
 
-  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
-  <div id="admin-panel">
-    <h1>🛠️ Admin Panel</h1>
-    <p class="note">🔍 Cari pengguna berdasarkan nama/email:</p>
-    <input type="text" id="search" placeholder="Cari pengguna...">
-    <button class="download" onclick="downloadCSV()">⬇️ Unduh Audit CSV</button>
-    <table id="userTable">
+  <div class="container">
+    <h1>👨‍💼 Panel Admin YDC Smartlamp</h1>
+    <div id="status" class="status">Memuat pengguna...</div>
+    <table id="user-table" style="display:none">
       <thead>
         <tr>
-          <th>UID</th>
           <th>Email</th>
           <th>Role</th>
-          <th>Perangkat</th>
-          <th>Aksi</th>
+          <th>Account Type</th>
+          <th>UID</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="user-list">
+        <!-- Data user akan dimuat di sini -->
+      </tbody>
     </table>
-    <p id="status"></p>
   </div>
 
   <script>
-    const db = firebase.database();
-    const userTableBody = document.querySelector("#userTable tbody");
-    const searchInput = document.getElementById("search");
-    const statusEl = document.getElementById("status");
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        document.getElementById("status").innerText = "❌ Anda belum login.";
+        return;
+      }
 
-    let userData = [];
-
-    firebase.auth().onAuthStateChanged(user => {
-      if (!user) return window.location.href = "login.html";
-
-      db.ref("users/" + user.uid + "/role").once("value", snap => {
-        if (snap.val() !== "admin") {
-          alert("⛔ Akses ditolak. Anda bukan admin.");
-          return window.location.href = "index.html";
+      const userRef = firebase.database().ref("users/" + user.uid);
+      userRef.once("value").then(snapshot => {
+        if (snapshot.val() && snapshot.val().role === "admin") {
+          loadAllUsers();
+        } else {
+          document.getElementById("status").innerText = "❌ Akses ditolak. Anda bukan admin.";
         }
-        loadUsers();
       });
     });
 
-    function loadUsers() {
-      db.ref("users").once("value", snap => {
-        const users = snap.val() || {};
-        const promises = [];
+    function loadAllUsers() {
+      const userList = document.getElementById("user-list");
+      const table = document.getElementById("user-table");
+      const status = document.getElementById("status");
 
-        userData = Object.entries(users).map(([uid, data]) => {
-          const email = data.email || "-";
-          const role = data.role || "user";
-          const obj = { uid, email, role, devices: 0 };
+      firebase.database().ref("users").once("value").then(snapshot => {
+        if (!snapshot.exists()) {
+          status.innerText = "❌ Tidak ada data pengguna.";
+          return;
+        }
 
-          const p = db.ref("devices/" + uid).once("value").then(devSnap => {
-            obj.devices = devSnap.numChildren();
-          });
-
-          promises.push(p);
-          return obj;
+        userList.innerHTML = "";
+        snapshot.forEach(child => {
+          const data = child.val();
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${data.email || '-'}</td>
+            <td>${data.role || '-'}</td>
+            <td>${data.accountType || '-'}</td>
+            <td>${child.key}</td>
+          `;
+          userList.appendChild(row);
         });
 
-        Promise.all(promises).then(renderTable);
+        status.style.display = "none";
+        table.style.display = "table";
+      }).catch(error => {
+        status.innerText = "❌ Gagal memuat data: " + error.message;
       });
-    }
-
-    function renderTable() {
-      const searchVal = searchInput.value.toLowerCase();
-      userTableBody.innerHTML = "";
-
-      userData.filter(u => u.email.toLowerCase().includes(searchVal)).forEach(u => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${u.uid}</td>
-          <td>${u.email}</td>
-          <td>${u.role}</td>
-          <td>${u.devices}</td>
-          <td>
-            <button class="promote" onclick="toggleRole('${u.uid}', '${u.role}')">🎖️ ${u.role === "admin" ? "Turunkan" : "Promosikan"}</button>
-            <button class="reset" onclick="resetDevices('${u.uid}')">🔄 Reset</button>
-            <button class="block" onclick="blockUser('${u.uid}')">🚫 Blokir</button>
-            <button class="delete" onclick="deleteUser('${u.uid}')">🗑️ Hapus</button>
-          </td>
-        `;
-        userTableBody.appendChild(row);
-      });
-
-      statusEl.textContent = userData.length ? "" : "❌ Tidak ada pengguna ditemukan.";
-    }
-
-    searchInput.addEventListener("input", renderTable);
-
-    function toggleRole(uid, currentRole) {
-      const newRole = currentRole === "admin" ? "user" : "admin";
-      db.ref("users/" + uid + "/role").set(newRole);
-    }
-
-    function resetDevices(uid) {
-      if (confirm("Reset semua perangkat pengguna ini?")) {
-        db.ref("devices/" + uid).remove();
-      }
-    }
-
-    function deleteUser(uid) {
-      if (confirm("Hapus akun pengguna ini beserta semua datanya?")) {
-        db.ref("users/" + uid).remove();
-        db.ref("devices/" + uid).remove();
-      }
-    }
-
-    function blockUser(uid) {
-      const blocked = confirm("Blokir pengguna ini? Data akan disimpan di /blockedUID.");
-      if (blocked) {
-        db.ref("blockedUID/" + uid).set({ blockedAt: Date.now() });
-        db.ref("users/" + uid).update({ role: "blocked" });
-      }
-    }
-
-    function downloadCSV() {
-      let csv = "UID,Email,Role,Perangkat\n";
-      userData.forEach(u => {
-        csv += `${u.uid},${u.email},${u.role},${u.devices}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "audit_pengguna.csv";
-      a.click();
     }
   </script>
 </body>
