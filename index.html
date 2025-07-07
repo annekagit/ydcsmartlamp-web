@@ -5,7 +5,88 @@
   <title>YDC Smartlamp - Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    /* [CSS tetap sama seperti sebelumnya] */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #eef4f8;
+      color: #333;
+    }
+    header {
+      background: #0077cc;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    header .right {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    main {
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+    }
+    label, select, input, button {
+      display: block;
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.6rem;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    input, select {
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .device-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .status {
+      margin-top: 1rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .action-btn {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    #mqtt-status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    @media (max-width: 500px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .action-btn {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -19,7 +100,42 @@
   </header>
 
   <main>
-    <!-- [Tampilan dan form tetap sama] -->
+    <button onclick="window.location.href='device-setup.html'">➕ Tambah Perangkat</button>
+
+    <label for="device-select">Pilih Perangkat:</label>
+    <select id="device-select" onchange="onDeviceChange()">
+      <option value="">-- Pilih --</option>
+    </select>
+    <button onclick="removeDevice()">🗑 Hapus Perangkat</button>
+    <button onclick="editDeviceName()">✏️ Edit Nama Perangkat</button>
+
+    <div class="device-section" id="control-section" style="display:none">
+      <div class="status">
+        Status: <span id="lamp-status">Unknown</span>
+        <span id="lamp-icon"></span>
+      </div>
+      <div class="action-btn">
+        <button onclick="turnOn()">💡 ON</button>
+        <button onclick="turnOff()">🌑 OFF</button>
+      </div>
+
+      <h3>⏱ Jadwal</h3>
+      <div id="current-schedule" style="margin:1rem 0; font-weight:bold; color:#333;">
+        ⏳ Jadwal Aktif: Tidak ada
+      </div>
+      <form onsubmit="setSchedule(event)">
+        <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
+        <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
+        <select id="action">
+          <option value="ON">ON</option>
+          <option value="OFF">OFF</option>
+        </select>
+        <button type="submit">Set Jadwal</button>
+        <button type="button" onclick="clearSchedule()" style="background:#d9534f;">🗑 Hapus Jadwal</button>
+      </form>
+
+      <div id="mqtt-status">🔄 Menghubungkan ke MQTT...</div>
+    </div>
   </main>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -66,14 +182,13 @@
 
       client.onMessageArrived = message => {
         if (!selectedDevice) return;
-        const statusTopic = `smartlamp/status/${selectedDevice}`;
-        const scheduleTopic = `smartlamp/schedule_status/${selectedDevice}`;
-
-        if (message.destinationName === statusTopic) {
+        const expectedStatus = `smartlamp/status/${selectedDevice}`;
+        const expectedSchedule = `smartlamp/schedule/${selectedDevice}`;
+        if (message.destinationName === expectedStatus) {
           const statusText = message.payloadString;
           document.getElementById("lamp-status").innerText = statusText;
           updateLampIcon(statusText);
-        } else if (message.destinationName === scheduleTopic) {
+        } else if (message.destinationName === expectedSchedule) {
           const payload = message.payloadString;
           if (payload === "clear_schedule") {
             document.getElementById("current-schedule").innerText = "⏳ Jadwal Aktif: Tidak ada";
@@ -85,44 +200,58 @@
       };
     }
 
-    function requestScheduleStatus() {
-      sendMessage("schedule_status_request", "get");
-    }
-
-    function onDeviceChange() {
-      selectedDevice = document.getElementById("device-select").value;
-      if (!selectedDevice || !client) {
-        document.getElementById("control-section").style.display = "none";
-        return;
+    function updateLampIcon(status) {
+      const iconContainer = document.getElementById("lamp-icon");
+      if (status === "ON") {
+        iconContainer.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+              <style>
+                .bulb {
+                  fill: #ffc107;
+                  animation: pulseGlow 1.2s infinite alternate;
+                  filter: url(#glow);
+                }
+                @keyframes pulseGlow {
+                  0% { filter: drop-shadow(0 0 3px #ffc107); }
+                  100% { filter: drop-shadow(0 0 10px #fff176); }
+                }
+              </style>
+            </defs>
+            <path class="bulb" d="M9 21h6v-1H9v1zm3-20C7.58 1 4 4.58 4 9c0 2.65 1.3 5 3.3 6.5.46.34.7.88.7 1.45v1.55h8v-1.55c0-.57.24-1.11.7-1.45C18.7 14 20 11.65 20 9c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        `;
+      } else if (status === "OFF") {
+        iconContainer.innerHTML = `
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#999" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 21h6v-1H9v1zm3-20C7.58 1 4 4.58 4 9c0 2.65 1.3 5 3.3 6.5.46.34.7.88.7 1.45v1.55h8v-1.55c0-.57.24-1.11.7-1.45C18.7 14 20 11.65 20 9c0-4.42-3.58-8-8-8z"/>
+          </svg>
+        `;
+      } else {
+        iconContainer.innerHTML = "";
       }
-      client.subscribe(`smartlamp/status/${selectedDevice}`);
-      client.subscribe(`smartlamp/schedule_status/${selectedDevice}`);
-      document.getElementById("control-section").style.display = "block";
-      requestLampStatus();
-      requestScheduleStatus(); // PENTING!
-    }
-
-    function sendMessage(topic, msg) {
-      if (!selectedDevice || !client) return;
-      const fullTopic = `smartlamp/${topic}/${selectedDevice}`;
-      const message = new Paho.Message(msg);
-      message.destinationName = fullTopic;
-      client.send(message);
-    }
-
-    function requestLampStatus() {
-      sendMessage("commands", "status_request");
     }
 
     function waitForPahoAndSetupMQTT() {
+      const maxAttempts = 20;
       let attempts = 0;
       const interval = setInterval(() => {
-        if (typeof Paho !== "undefined") {
+        if (typeof Paho !== "undefined" && typeof Paho.Client !== "undefined") {
           clearInterval(interval);
           setupMQTT();
-        } else if (++attempts > 20) {
-          clearInterval(interval);
-          document.getElementById("mqtt-status").innerText = "❌ MQTT gagal dimuat";
+        } else {
+          attempts++;
+          if (attempts >= maxAttempts) {
+            clearInterval(interval);
+            document.getElementById("mqtt-status").innerText = "❌ MQTT gagal dimuat";
+          }
         }
       }, 250);
     }
@@ -140,6 +269,31 @@
           select.appendChild(option);
         });
       });
+    }
+
+    function onDeviceChange() {
+      selectedDevice = document.getElementById("device-select").value;
+      if (!selectedDevice || !client) {
+        document.getElementById("control-section").style.display = "none";
+        return;
+      }
+      client.subscribe(`smartlamp/status/${selectedDevice}`);
+      client.subscribe(`smartlamp/schedule/${selectedDevice}`);
+      document.getElementById("control-section").style.display = "block";
+      requestLampStatus();
+    }
+
+    function sendMessage(topic, msg) {
+      if (!selectedDevice || !client) return;
+      const fullTopic = `smartlamp/${topic}/${selectedDevice}`;
+      const message = new Paho.Message(msg);
+      message.destinationName = fullTopic;
+      client.send(message);
+    }
+
+    function requestLampStatus() {
+      if (!selectedDevice) return;
+      sendMessage("commands", "status_request");
     }
 
     function turnOn() {
@@ -167,17 +321,34 @@
       }
     }
 
+    function removeDevice() {
+      if (!selectedDevice || !confirm("Hapus perangkat ini?")) return;
+      firebase.database().ref(`devices/${uid}/${selectedDevice}`).remove().then(() => {
+        selectedDevice = null;
+        document.getElementById("control-section").style.display = "none";
+        loadDevices();
+      });
+    }
+
+    function editDeviceName() {
+      if (!selectedDevice) return;
+      const ref = firebase.database().ref(`devices/${uid}/${selectedDevice}`);
+      ref.once("value").then(snapshot => {
+        const current = snapshot.val().name;
+        const nameBaru = prompt("Nama baru:", current);
+        if (nameBaru && nameBaru.trim()) {
+          ref.update({ name: nameBaru.trim() }).then(() => {
+            loadDevices();
+            document.getElementById("device-select").value = selectedDevice;
+          });
+        }
+      });
+    }
+
     function logout() {
       firebase.auth().signOut().then(() => {
         window.location.href = "login.html";
       });
-    }
-
-    function updateLampIcon(status) {
-      const icon = document.getElementById("lamp-icon");
-      icon.innerHTML = status === "ON"
-        ? `<svg ...>...</svg>`
-        : `<svg ...>...</svg>`;
     }
 
     function updateClock() {
