@@ -195,7 +195,7 @@
 
       let maxDevices = BASIC_LIMIT;
 
-      userRef.once("value").then(snapshot => {
+      userRef.on("value").then(snapshot => {
         const accountType = snapshot.val()?.type || "basic";
         if (accountType === "standard") maxDevices = 6;
         else if (accountType === "premium") maxDevices = Infinity;
