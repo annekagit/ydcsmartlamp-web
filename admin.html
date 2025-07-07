@@ -1,120 +1,151 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>Admin Panel - YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f4f8;
-      margin: 0;
+      background: #f0f8ff;
       padding: 2rem;
     }
     h1 {
       color: #0077cc;
       text-align: center;
     }
-    .container {
-      max-width: 960px;
-      margin: auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 1rem;
+      margin-top: 2rem;
     }
     th, td {
       padding: 0.75rem;
+      border: 1px solid #ccc;
       text-align: left;
-      border-bottom: 1px solid #ddd;
     }
     th {
-      background: #f5f9ff;
-      color: #0077cc;
+      background-color: #e6f0ff;
     }
-    .status {
-      text-align: center;
-      margin-top: 1rem;
-      color: red;
-      font-weight: bold;
+    select, input {
+      padding: 0.4rem;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.4rem 0.8rem;
+      background-color: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    .device-row {
+      background-color: #f9f9f9;
     }
   </style>
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="firebase-config.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>👨‍💼 Panel Admin YDC Smartlamp</h1>
-    <div id="status" class="status">Memuat pengguna...</div>
-    <table id="user-table" style="display:none">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Account Type</th>
-          <th>UID</th>
-        </tr>
-      </thead>
-      <tbody id="user-list">
-        <!-- Data user akan dimuat di sini -->
-      </tbody>
-    </table>
-  </div>
+  <h1>Admin Panel - YDC Smartlamp</h1>
+  <div id="table-container">Memuat data pengguna...</div>
 
   <script>
     firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) {
-        document.getElementById("status").innerText = "❌ Anda belum login.";
-        return;
-      }
-
-      const userRef = firebase.database().ref("users/" + user.uid);
-      userRef.once("value").then(snapshot => {
-        if (snapshot.val() && snapshot.val().role === "admin") {
-          loadAllUsers();
-        } else {
-          document.getElementById("status").innerText = "❌ Akses ditolak. Anda bukan admin.";
+      if (!user) return location.href = 'login.html';
+      const adminRef = firebase.database().ref('users/' + user.uid);
+      adminRef.once('value').then(snapshot => {
+        if (snapshot.val()?.role !== 'admin') {
+          document.body.innerHTML = '<h2>Akses ditolak: Anda bukan admin.</h2>';
+          return;
         }
+        loadUsers();
       });
     });
 
-    function loadAllUsers() {
-      const userList = document.getElementById("user-list");
-      const table = document.getElementById("user-table");
-      const status = document.getElementById("status");
+    function loadUsers() {
+      const usersRef = firebase.database().ref('users');
+      const devicesRef = firebase.database().ref('devices');
 
-      firebase.database().ref("users").once("value").then(snapshot => {
-        if (!snapshot.exists()) {
-          status.innerText = "❌ Tidak ada data pengguna.";
-          return;
-        }
+      usersRef.once('value').then(userSnap => {
+        devicesRef.once('value').then(deviceSnap => {
+          const users = userSnap.val() || {};
+          const devices = deviceSnap.val() || {};
+          let html = '<table><tr><th>Email</th><th>UID</th><th>Role</th><th>Account Type</th><th>Perangkat</th></tr>';
 
-        userList.innerHTML = "";
-        snapshot.forEach(child => {
-          const data = child.val();
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${data.email || '-'}</td>
-            <td>${data.role || '-'}</td>
-            <td>${data.accountType || '-'}</td>
-            <td>${child.key}</td>
-          `;
-          userList.appendChild(row);
+          Object.keys(users).forEach(uid => {
+            const u = users[uid];
+            html += `<tr>
+              <td>${u.email}</td>
+              <td>${uid}</td>
+              <td>
+                <select onchange="updateRole('${uid}', this.value)">
+                  <option value="user" ${u.role === 'user' ? 'selected' : ''}>user</option>
+                  <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>admin</option>
+                </select>
+              </td>
+              <td>
+                <select onchange="updateType('${uid}', this.value)">
+                  <option value="basic" ${u.accountType === 'basic' ? 'selected' : ''}>basic</option>
+                  <option value="standard" ${u.accountType === 'standard' ? 'selected' : ''}>standard</option>
+                  <option value="premium" ${u.accountType === 'premium' ? 'selected' : ''}>premium</option>
+                </select>
+              </td>
+              <td>`;
+            if (devices[uid]) {
+              html += '<table style="width:100%">';
+              Object.entries(devices[uid]).forEach(([deviceID, dev]) => {
+                html += `<tr class="device-row">
+                  <td colspan="2">
+                    <b>${deviceID}</b>: <input value="${dev.name}" onchange="updateDevice('${uid}','${deviceID}', this.value)"> 
+                    <button onclick="deleteDevice('${uid}','${deviceID}')">🗑️</button>
+                  </td></tr>`;
+              });
+              html += '</table>';
+            } else {
+              html += 'Tidak ada perangkat';
+            }
+            html += '</td></tr>';
+          });
+
+          html += '</table>';
+          document.getElementById('table-container').innerHTML = html;
         });
-
-        status.style.display = "none";
-        table.style.display = "table";
-      }).catch(error => {
-        status.innerText = "❌ Gagal memuat data: " + error.message;
       });
+    }
+
+    function updateType(uid, type) {
+      firebase.database().ref('users/' + uid + '/accountType').set(type)
+        .then(() => alert('✅ Account type diperbarui'))
+        .catch(err => alert('❌ Gagal: ' + err.message));
+    }
+
+    function updateRole(uid, role) {
+      firebase.database().ref('users/' + uid + '/role').set(role)
+        .then(() => alert('✅ Role diperbarui'))
+        .catch(err => alert('❌ Gagal: ' + err.message));
+    }
+
+    function updateDevice(uid, deviceID, newName) {
+      firebase.database().ref(`devices/${uid}/${deviceID}/name`).set(newName)
+        .then(() => console.log('Perangkat diperbarui'))
+        .catch(err => alert('❌ Gagal memperbarui perangkat: ' + err.message));
+    }
+
+    function deleteDevice(uid, deviceID) {
+      if (confirm('Yakin ingin menghapus perangkat ini?')) {
+        firebase.database().ref(`devices/${uid}/${deviceID}`).remove()
+          .then(() => {
+            alert('✅ Perangkat dihapus.');
+            location.reload();
+          })
+          .catch(err => alert('❌ Gagal menghapus: ' + err.message));
+      }
     }
   </script>
 </body>
