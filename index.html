@@ -104,6 +104,19 @@
     #schedule-list button:hover {
       background-color: #c9302c;
     }
+    #account-type {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    #upgrade-btn {
+      background-color: #28a745;
+      width: auto;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.9rem;
+    }
+    #upgrade-btn:hover {
+      background-color: #218838;
+    }
     @media (max-width: 500px) {
       header {
         flex-direction: column;
@@ -111,6 +124,11 @@
       }
       .action-btn {
         flex-direction: column;
+      }
+      .right {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
       }
     }
   </style>
@@ -121,6 +139,8 @@
     <span id="clock" style="font-weight:normal; font-size:1.3rem;"></span>
     <div class="right">
       <span id="greeting">Hallo, teman</span>
+      <span id="account-type">Basic</span>
+      <button id="upgrade-btn" onclick="window.location.href='upgrade.html'">Upgrade</button>
       <button onclick="logout()" style="background: #e53935;">Logout</button>
     </div>
   </header>
@@ -172,6 +192,7 @@
     let uid = null;
     let selectedDevice = null;
     let client;
+    let accountType = "basic"; // Default sesuai device-setup.html
 
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
@@ -180,8 +201,28 @@
       }
       uid = user.uid;
       document.getElementById("greeting").innerText = "Hallo, " + (user.displayName || user.email);
-      loadDevices();
+      // Ambil accountType dari Firebase
+      firebase.database().ref("users/" + uid).once("value").then(snapshot => {
+        accountType = snapshot.val()?.accountType || "basic";
+        // Format accountType dengan huruf kapital
+        const formattedAccountType = accountType.charAt(0).toUpperCase() + accountType.slice(1).toLowerCase();
+        document.getElementById("account-type").innerText = formattedAccountType;
+        restrictFeaturesByAccountType();
+        loadDevices();
+      }).catch(e => {
+        console.error("Error fetching account type:", e);
+        alert("Gagal memuat tipe akun.");
+      });
     });
+
+    function restrictFeaturesByAccountType() {
+      const scheduleForm = document.querySelector("form");
+      const deleteButtons = document.querySelectorAll("#schedule-list button");
+      if (accountType === "basic" || accountType === "standard") {
+        deleteButtons.forEach(btn => btn.style.display = "none"); // Sembunyikan tombol hapus individu
+      }
+      // Premium: semua fitur tersedia
+    }
 
     function setupMQTT() {
       const mqttHost = "a559f98d6d7a4f4ebfb441aada2b1175.s1.eu.hivemq.cloud";
@@ -247,6 +288,7 @@
                   scheduleList.appendChild(li);
                 }
               });
+              restrictFeaturesByAccountType(); // Perbarui batasan setelah daftar jadwal dimuat
             }
           } catch (e) {
             console.error("Error parsing schedule status:", e, payload);
@@ -382,7 +424,7 @@
       const jam = document.getElementById("jam").value.padStart(2, "0");
       const menit = document.getElementById("menit").value.padStart(2, "0");
       const action = document.getElementById("action").value;
-      const msg = `${jam}:${menit}=${action}`;
+      const msg = `${jam}:${menit}=${action},${accountType}`;
       sendMessage("schedule", msg);
       document.getElementById("jam").value = "";
       document.getElementById("menit").value = "";
