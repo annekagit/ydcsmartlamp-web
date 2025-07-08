@@ -689,7 +689,7 @@ function showPromoModal() {
   if (accountType === "basic" && !localStorage.getItem("promoShown")) {
     loadPromoData(); // Muat data sebelum menampilkan modal
     modal.style.display = "flex";
-    setTimeout(closeModal, 5000); // Tutup setelah 5 detik
+    setTimeout(closeModal, 10000); // Tutup setelah 10 detik
     localStorage.setItem("promoShown", "true"); // Hanya muncul sekali per sesi
   }
 }
