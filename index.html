@@ -368,30 +368,26 @@ function loadStaticAd() {
       fetch('static-ad.json')
         .then(response => {
           if (!response.ok) {
-            throw new Error('Gagal memuat static-ad.json');
+            throw new Error('Gagal memuat static-ad.json. Kode error: ' + response.status);
           }
           return response.json();
         })
         .then(data => {
           const adBanner = document.getElementById('ad-banner');
+          // Gunakan innerHTML untuk merender HTML dari message
           adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
-          // Pastikan ada elemen <a> di dalam message, atau tambahkan secara dinamis
-          if (data.link) {
-            const link = adBanner.querySelector('a') || document.createElement('a');
-            link.href = data.link;
-            if (!adBanner.querySelector('a')) {
-              link.innerText = 'Klik di sini';
-              adBanner.appendChild(link);
-            }
+          // Pastikan link dari data.link digunakan jika ada
+          const linkElement = adBanner.querySelector('a');
+          if (linkElement && data.link) {
+            linkElement.href = data.link;
           }
         })
         .catch(error => {
           console.error('Error loading static ad:', error);
           const adBanner = document.getElementById('ad-banner');
-          adBanner.innerHTML = 'Iklan gagal dimuat. Silakan coba lagi nanti.';
+          adBanner.innerHTML = 'Iklan gagal dimuat. Silakan coba lagi nanti. Error: ' + error.message;
         });
     }
-
     function restrictFeaturesByAccountType() {
       const deleteButtons = document.querySelectorAll("#schedule-list button");
       if (accountType === "basic") {
