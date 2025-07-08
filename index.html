@@ -10,6 +10,7 @@
       margin: 0;
       background: #eef4f8;
       color: #333;
+      position: relative;
     }
     header {
       background: #0077cc;
@@ -55,20 +56,32 @@
       display: block;
     }
     .voice-assistant-btn {
-      display: none;
-      margin-top: 1rem;
-      padding: 0.6rem;
-      background: #4caf50;
-      color: white;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #4285f4; /* Warna biru Google */
       border: none;
-      border-radius: 6px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
     }
-    .voice-assistant-btn.active {
-      display: block;
+    .voice-assistant-btn:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
     }
-    .voice-assistant-btn:hover {
-      background: #45a049;
+    .voice-assistant-btn:hover:not(:disabled) {
+      transform: scale(1.1);
+    }
+    .voice-assistant-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: white;
     }
     label, select, input, button {
       display: block;
@@ -165,6 +178,16 @@
         flex-direction: column;
         align-items: flex-start;
       }
+      .voice-assistant-btn {
+        width: 50px;
+        height: 50px;
+        bottom: 10px;
+        right: 10px;
+      }
+      .voice-assistant-btn svg {
+        width: 20px;
+        height: 20px;
+      }
     }
   </style>
 </head>
@@ -218,9 +241,32 @@
       </form>
 
       <div id="mqtt-status">🔄 Menghubungkan ke MQTT...</div>
-      <button id="voice-assistant-btn" class="voice-assistant-btn">🎙 Aktifkan Google Voice</button>
     </div>
   </main>
+
+  <button id="voice-assistant-btn" class="voice-assistant-btn" title="Google Voice Assistant">
+    <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .dot {
+          animation: pulseDot 1.2s infinite alternate;
+          transform-origin: center; /* Memastikan transformasi berpusat di tengah lingkaran */
+        }
+        .dot-red { fill: #EA4335; } /* Merah */
+        .dot-yellow { fill: #FBBC05; animation-delay: 0.2s; } /* Kuning */
+        .dot-green { fill: #34A853; animation-delay: 0.4s; } /* Hijau */
+        .dot-blue { fill: #4285F4; animation-delay: 0.6s; } /* Biru */
+
+        @keyframes pulseDot {
+          0% { transform: scale(0.8); opacity: 0.6; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      </style>
+      <circle class="dot dot-blue" cx="6" cy="12" r="3"/>
+      <circle class="dot dot-red" cx="12" cy="12" r="3"/>
+      <circle class="dot dot-yellow" cx="18" cy="12" r="3"/>
+      <circle class="dot dot-green" cx="12" cy="6" r="3"/>
+    </svg>
+  </button>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -260,13 +306,13 @@
       const voiceBtn = document.getElementById("voice-assistant-btn");
       if (accountType === "basic") {
         adBanner.classList.add("active");
-        voiceBtn.classList.remove("active");
+        voiceBtn.disabled = true;
       } else if (accountType === "premium") {
         adBanner.classList.remove("active");
-        voiceBtn.classList.add("active");
+        voiceBtn.disabled = false;
       } else { // standard
         adBanner.classList.remove("active");
-        voiceBtn.classList.remove("active");
+        voiceBtn.disabled = true;
       }
     }
 
@@ -554,7 +600,9 @@
 
     // Fungsi dummy untuk Google Voice Assistant (ganti dengan integrasi API nanti)
     document.getElementById("voice-assistant-btn").addEventListener("click", () => {
-      alert("Fitur Google Voice Assistant akan diaktifkan. (Prototipe) Hubungi admin untuk integrasi penuh.");
+      if (!document.getElementById("voice-assistant-btn").disabled) {
+        alert("Fitur Google Voice Assistant diaktifkan. (Prototipe) Hubungi admin untuk integrasi penuh.");
+      }
     });
   </script>
 </body>
