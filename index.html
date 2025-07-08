@@ -152,7 +152,7 @@
 
   <main>
     <div class="account-info">
-      <span id="account-type">Account Type:</span>
+      <span id="account-type">Basic</span>
       <button id="upgrade-btn" onclick="window.location.href='upgrade.html'">Upgrade</button>
     </div>
     <button onclick="window.location.href='device-setup.html'">➕ Tambah Perangkat</button>
@@ -225,12 +225,12 @@
     });
 
     function restrictFeaturesByAccountType() {
-      const scheduleForm = document.querySelector("form");
       const deleteButtons = document.querySelectorAll("#schedule-list button");
       if (accountType === "basic" || accountType === "standard") {
-        deleteButtons.forEach(btn => btn.style.display = "none"); // Sembunyikan tombol hapus individu
+        deleteButtons.forEach(btn => btn.style.display = "none"); // Sembunyikan tombol hapus individu untuk basic dan standard
+      } else {
+        deleteButtons.forEach(btn => btn.style.display = ""); // Tampilkan untuk premium
       }
-      // Premium: semua fitur tersedia
     }
 
     function setupMQTT() {
@@ -297,7 +297,7 @@
                   scheduleList.appendChild(li);
                 }
               });
-              restrictFeaturesByAccountType(); // Perbarui batasan setelah daftar jadwal dimuat
+              restrictFeaturesByAccountType(); // Panggil setelah daftar jadwal diperbarui
             }
           } catch (e) {
             console.error("Error parsing schedule status:", e, payload);
