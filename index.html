@@ -226,10 +226,10 @@
 
     function restrictFeaturesByAccountType() {
       const deleteButtons = document.querySelectorAll("#schedule-list button");
-      if (accountType === "basic" || accountType === "standard") {
-        deleteButtons.forEach(btn => btn.style.display = "none"); // Sembunyikan tombol hapus individu untuk basic dan standard
+      if (accountType === "basic") {
+        deleteButtons.forEach(btn => btn.style.display = "none"); // Sembunyikan tombol hapus untuk basic
       } else {
-        deleteButtons.forEach(btn => btn.style.display = ""); // Tampilkan untuk premium
+        deleteButtons.forEach(btn => btn.style.display = ""); // Tampilkan untuk standard dan premium
       }
     }
 
