@@ -703,15 +703,32 @@ function closeModal() {
   modal.style.display = "none";
 }
     function loadStaticAd() {
-  fetch('static-ad.json')
-    .then(response => response.json())
-    .then(data => {
-      const adBanner = document.getElementById('ad-banner');
-      adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
-      adBanner.querySelector('a').href = data.link || 'upgrade.html';
-    })
-    .catch(error => console.error('Error loading static ad:', error));
-}
+      fetch('static-ad.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Gagal memuat static-ad.json');
+          }
+          return response.json();
+        })
+        .then(data => {
+          const adBanner = document.getElementById('ad-banner');
+          adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
+          // Pastikan ada elemen <a> di dalam message, atau tambahkan secara dinamis
+          if (data.link) {
+            const link = adBanner.querySelector('a') || document.createElement('a');
+            link.href = data.link;
+            if (!adBanner.querySelector('a')) {
+              link.innerText = 'Klik di sini';
+              adBanner.appendChild(link);
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error loading static ad:', error);
+          const adBanner = document.getElementById('ad-banner');
+          adBanner.innerHTML = 'Iklan gagal dimuat. Silakan coba lagi nanti.';
+        });
+    }
   </script>
 </body>
 </html>
