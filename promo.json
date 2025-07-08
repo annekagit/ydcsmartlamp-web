@@ -1,12 +1,6 @@
-fetch('promo.json')
-  .then(response => response.json())
-  .then(data => {
-    document.querySelector('#promo-modal h2').innerText = data.title;
-    document.querySelector('#promo-modal p').innerText = data.message;
-    document.querySelector('#promo-modal button').onclick = () => window.location.href = data.link;
-  });
 {
-  "title": "Promo Spesial!",
-  "message": "Upgrade ke Premium sekarang dan dapatkan fitur lebih!",
-  "link": "upgrade.html"
+  "title": "Promo Spesial Bulan Ini!",
+  "message": "Upgrade ke Premium sekarang dan nikmati Google Voice Assistant + 10 jadwal tambahan. Hanya Rp 99.000/tahun!",
+  "link": "upgrade.html",
+  "image": "promo-image.jpg"
 }
