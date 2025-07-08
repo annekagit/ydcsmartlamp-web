@@ -5,82 +5,36 @@
   <title>Pengelolaan Iklan - YDC Smartlamp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      background: #eef4f8;
-      color: #333;
-      padding: 2rem;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #0077cc;
-    }
-    .ad-form {
-      margin-bottom: 2rem;
-    }
-    label {
-      display: block;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 0.6rem;
-      margin-top: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      background-color: #0077cc;
-      color: white;
-      border: none;
-      padding: 0.6rem 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 1rem;
-    }
-    button:hover {
-      background-color: #005fa3;
-    }
-    .preview {
-      margin-top: 1rem;
-      text-align: center;
-    }
-    .preview img {
-      max-width: 100%;
-      border-radius: 6px;
-    }
-    @media (max-width: 500px) {
-      .container {
-        padding: 1rem;
-      }
-    }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #eef4f8; color: #333; padding: 2rem; }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #0077cc; }
+    .ad-form { margin-bottom: 2rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    input, textarea { width: 100%; padding: 0.6rem; margin-top: 0.5rem; border: 1px solid #ccc; border-radius: 6px; }
+    input[type="file"] { padding: 0; }
+    button { background-color: #0077cc; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; margin-top: 1rem; }
+    button:hover { background-color: #005fa3; }
+    .preview { margin-top: 1rem; text-align: center; }
+    .preview img { max-width: 100%; border-radius: 6px; }
+    @media (max-width: 500px) { .container { padding: 1rem; } }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Pengelolaan Iklan</h2>
 
-    <!-- Form untuk static-ad -->
     <div class="ad-form">
       <h3>Iklan Statis</h3>
       <label for="static-message">Pesan:</label>
       <textarea id="static-message" rows="3" placeholder="Masukkan pesan iklan..."></textarea>
       <label for="static-link">Link:</label>
       <input type="text" id="static-link" placeholder="Masukkan URL link..." />
+      <label for="static-image">Unggah Gambar:</label>
+      <input type="file" id="static-image" accept="image/*" />
+      <div class="preview" id="static-preview"></div>
       <button onclick="saveAd('static')">Simpan</button>
     </div>
 
-    <!-- Form untuk promo -->
     <div class="ad-form">
       <h3>Iklan Dinamis</h3>
       <label for="promo-title">Judul:</label>
@@ -89,6 +43,9 @@
       <textarea id="promo-message" rows="3" placeholder="Masukkan pesan promo..."></textarea>
       <label for="promo-link">Link:</label>
       <input type="text" id="promo-link" placeholder="Masukkan URL link..." />
+      <label for="promo-image">Unggah Gambar:</label>
+      <input type="file" id="promo-image" accept="image/*" />
+      <div class="preview" id="promo-preview"></div>
       <button onclick="saveAd('promo')">Simpan</button>
     </div>
   </div>
@@ -96,9 +53,10 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
   <script src="firebase-config.js"></script>
   <script>
-    // Inisialisasi Firebase (sudah dilakukan di firebase-config.js)
+    const storage = firebase.storage();
 
     function saveAd(type) {
       const uid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
@@ -108,13 +66,18 @@
       }
 
       let data = {};
+      let fileInput, previewDiv;
       if (type === 'static') {
         data.message = document.getElementById('static-message').value;
         data.link = document.getElementById('static-link').value;
+        fileInput = document.getElementById('static-image');
+        previewDiv = document.getElementById('static-preview');
       } else if (type === 'promo') {
         data.title = document.getElementById('promo-title').value;
         data.message = document.getElementById('promo-message').value;
         data.link = document.getElementById('promo-link').value;
+        fileInput = document.getElementById('promo-image');
+        previewDiv = document.getElementById('promo-preview');
       }
 
       if (!data.message || !data.link) {
@@ -122,18 +85,59 @@
         return;
       }
 
+      // Unggah gambar jika ada
+      let imageUrl = null;
+      if (fileInput.files && fileInput.files[0]) {
+        const storageRef = storage.ref(`ads/${uid}/${type}/${Date.now()}_${fileInput.files[0].name}`);
+        const uploadTask = storageRef.put(fileInput.files[0]);
+
+        uploadTask.on('state_changed',
+          null,
+          (error) => {
+            console.error('Error uploading image:', error);
+            alert('Gagal mengunggah gambar.');
+          },
+          () => {
+            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+              imageUrl = downloadURL;
+              data.image = imageUrl;
+              saveToDatabase(data, type, uid);
+            });
+          }
+        );
+      } else {
+        saveToDatabase(data, type, uid);
+      }
+
+      // Pratinjau gambar
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          previewDiv.innerHTML = '';
+          previewDiv.appendChild(img);
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    }
+
+    function saveToDatabase(data, type, uid) {
       const dbRef = firebase.database().ref(`ads/${type}/${uid}`);
       dbRef.set(data)
         .then(() => {
           alert(`Data iklan ${type} berhasil disimpan!`);
-          // Reset form
           if (type === 'static') {
             document.getElementById('static-message').value = '';
             document.getElementById('static-link').value = '';
+            document.getElementById('static-image').value = '';
+            document.getElementById('static-preview').innerHTML = '';
           } else {
             document.getElementById('promo-title').value = '';
             document.getElementById('promo-message').value = '';
             document.getElementById('promo-link').value = '';
+            document.getElementById('promo-image').value = '';
+            document.getElementById('promo-preview').innerHTML = '';
           }
         })
         .catch(error => {
@@ -142,10 +146,37 @@
         });
     }
 
-    // Pastikan pengguna login sebelum mengakses halaman
     firebase.auth().onAuthStateChanged(user => {
       if (!user) {
         window.location.href = 'login.html';
+      }
+    });
+
+    document.getElementById('static-image').addEventListener('change', function() {
+      const preview = document.getElementById('static-preview');
+      preview.innerHTML = '';
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+
+    document.getElementById('promo-image').addEventListener('change', function() {
+      const preview = document.getElementById('promo-preview');
+      preview.innerHTML = '';
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(this.files[0]);
       }
     });
   </script>
