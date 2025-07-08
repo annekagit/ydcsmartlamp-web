@@ -52,6 +52,10 @@
       border-radius: 6px;
       text-align: center;
     }
+    .ad-banner:hover {
+  background: #e0e0e0;
+  transition: background 0.3s;
+}
     .ad-banner.active {
       display: block;
     }
@@ -106,7 +110,7 @@
     }
     .close-btn {
       position: absolute;
-      top: 10px;
+      top: 50px;
       right: 15px;
       font-size: 20px;
       border: none;
@@ -645,7 +649,7 @@
     // Fungsi dummy untuk Google Voice Assistant
     document.getElementById("voice-assistant-btn").addEventListener("click", () => {
       if (!document.getElementById("voice-assistant-btn").disabled) {
-        alert("Fitur Google Voice Assistant diaktifkan. (Prototipe) Hubungi admin untuk integrasi penuh.");
+        alert("Fitur Google Voice Assistant diaktifkan. Hubungi admin untuk integrasi penuh.");
       }
     });
 
@@ -697,6 +701,16 @@ function showPromoModal() {
 function closeModal() {
   const modal = document.getElementById("promo-modal");
   modal.style.display = "none";
+}
+    function loadStaticAd() {
+  fetch('static-ad.json')
+    .then(response => response.json())
+    .then(data => {
+      const adBanner = document.getElementById('ad-banner');
+      adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
+      adBanner.querySelector('a').href = data.link || 'upgrade.html';
+    })
+    .catch(error => console.error('Error loading static ad:', error));
 }
   </script>
 </body>
