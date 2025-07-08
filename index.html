@@ -653,6 +653,7 @@
       const modal = document.getElementById("promo-modal");
       if (accountType === "basic" && !localStorage.getItem("promoShown")) {
         modal.style.display = "flex";
+        setTimeout(closeModal, 5000);
         localStorage.setItem("promoShown", "true"); // Hanya muncul sekali per sesi
       }
     }
