@@ -342,6 +342,7 @@
         updateFeaturesByAccountType();
         restrictFeaturesByAccountType();
         loadDevices();
+        loadStaticAd();
         showPromoModal();
       }).catch(e => {
         console.error("Error fetching account type:", e);
