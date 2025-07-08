@@ -1,0 +1,33 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Ganti dengan branch utama Anda jika berbeda
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'  # Sesuaikan versi Node.js jika perlu
+
+      - name: Install dependencies
+        run: npm install  # Jika ada dependensi, hapus baris ini jika tidak perlu
+
+      - name: Build
+        run: |
+          # Tambahkan perintah build jika ada (misalnya, untuk minifikasi)
+          echo "No build step needed for static HTML"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # Direktori yang akan di-deploy (root proyek)
+          publish_branch: gh-pages  # Branch untuk GitHub Pages
