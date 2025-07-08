@@ -60,7 +60,7 @@
       display: block;
     }
     .voice-assistant-btn {
-      position: Fixed;
+      position: fixed;
       bottom: 50px;
       right: 50px;
       width: 60px;
@@ -362,6 +362,33 @@
         adBanner.classList.remove("active");
         voiceBtn.disabled = true;
       }
+    }
+function loadStaticAd() {
+      fetch('static-ad.json')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Gagal memuat static-ad.json');
+          }
+          return response.json();
+        })
+        .then(data => {
+          const adBanner = document.getElementById('ad-banner');
+          adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
+          // Pastikan ada elemen <a> di dalam message, atau tambahkan secara dinamis
+          if (data.link) {
+            const link = adBanner.querySelector('a') || document.createElement('a');
+            link.href = data.link;
+            if (!adBanner.querySelector('a')) {
+              link.innerText = 'Klik di sini';
+              adBanner.appendChild(link);
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error loading static ad:', error);
+          const adBanner = document.getElementById('ad-banner');
+          adBanner.innerHTML = 'Iklan gagal dimuat. Silakan coba lagi nanti.';
+        });
     }
 
     function restrictFeaturesByAccountType() {
@@ -702,33 +729,6 @@ function closeModal() {
   const modal = document.getElementById("promo-modal");
   modal.style.display = "none";
 }
-    function loadStaticAd() {
-      fetch('static-ad.json')
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Gagal memuat static-ad.json');
-          }
-          return response.json();
-        })
-        .then(data => {
-          const adBanner = document.getElementById('ad-banner');
-          adBanner.innerHTML = data.message || 'Iklan: Upgrade ke Premium!';
-          // Pastikan ada elemen <a> di dalam message, atau tambahkan secara dinamis
-          if (data.link) {
-            const link = adBanner.querySelector('a') || document.createElement('a');
-            link.href = data.link;
-            if (!adBanner.querySelector('a')) {
-              link.innerText = 'Klik di sini';
-              adBanner.appendChild(link);
-            }
-          }
-        })
-        .catch(error => {
-          console.error('Error loading static ad:', error);
-          const adBanner = document.getElementById('ad-banner');
-          adBanner.innerHTML = 'Iklan gagal dimuat. Silakan coba lagi nanti.';
-        });
-    }
-  </script>
+</script>
 </body>
 </html>
