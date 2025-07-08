@@ -89,8 +89,20 @@
       padding: 0;
     }
     #schedule-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 0.5rem;
       border-bottom: 1px solid #eee;
+    }
+    #schedule-list button {
+      background-color: #d9534f;
+      width: auto;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.9rem;
+    }
+    #schedule-list button:hover {
+      background-color: #c9302c;
     }
     @media (max-width: 500px) {
       header {
@@ -222,10 +234,16 @@
               document.getElementById("current-schedule").innerText = `⏳ Jadwal Aktif: ${schedules.length} jadwal`;
               scheduleList.innerHTML = "";
               schedules.forEach(schedule => {
-                if (schedule) { // Pastikan schedule tidak kosong
+                if (schedule) {
                   const [time, action] = schedule.split("=");
                   const li = document.createElement("li");
-                  li.innerText = `${time} untuk ${action}`;
+                  const span = document.createElement("span");
+                  span.innerText = `${time} untuk ${action}`;
+                  const deleteBtn = document.createElement("button");
+                  deleteBtn.innerText = "Hapus";
+                  deleteBtn.onclick = () => deleteSchedule(time, action);
+                  li.appendChild(span);
+                  li.appendChild(deleteBtn);
                   scheduleList.appendChild(li);
                 }
               });
@@ -368,6 +386,14 @@
       sendMessage("schedule", msg);
       document.getElementById("jam").value = "";
       document.getElementById("menit").value = "";
+    }
+
+    function deleteSchedule(time, action) {
+      if (!selectedDevice) return;
+      if (confirm(`Yakin ingin menghapus jadwal ${time} untuk ${action}?`)) {
+        const msg = `delete:${time}=${action}`;
+        sendMessage("schedule", msg);
+      }
     }
 
     function clearSchedule() {
