@@ -42,6 +42,8 @@
       border-radius: 6px;
       font-size: 1rem;
     }
+
+
     input, select {
       border: 1px solid #ccc;
     }
@@ -56,7 +58,7 @@
     }
     .device-section {
       margin-top: 2rem;
-      padding: 1rem;
+      padding: 1 Suitrem;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
@@ -77,20 +79,6 @@
       margin-top: 1rem;
       font-size: 0.9rem;
       color: #555;
-    }
-    #current-schedule {
-      margin: 1rem 0;
-      font-weight: bold;
-      color: #333;
-    }
-    #schedule-list {
-      margin-top: 1rem;
-      list-style: none;
-      padding: 0;
-    }
-    #schedule-list li {
-      padding: 0.5rem;
-      border-bottom: 1px solid #eee;
     }
     @media (max-width: 500px) {
       header {
@@ -134,8 +122,9 @@
       </div>
 
       <h3>⏱ Jadwal</h3>
-      <div id="current-schedule">⏳ Jadwal Aktif: Tidak ada</div>
-      <ul id="schedule-list"></ul>
+      <div id="current-schedule" style="margin:1rem 0; font-weight:bold; color:#333;">
+        ⏳ Jadwal Aktif: Tidak ada
+      </div>
       <form onsubmit="setSchedule(event)">
         <input type="number" id="jam" min="0" max="23" placeholder="Jam" required>
         <input type="number" id="menit" min="0" max="59" placeholder="Menit" required>
@@ -144,7 +133,7 @@
           <option value="OFF">OFF</option>
         </select>
         <button type="submit">Set Jadwal</button>
-        <button type="button" onclick="clearSchedule()" style="background:#d9534f;">🗑 Hapus Semua Jadwal</button>
+        <button type="button" onclick="clearSchedule()" style="background:#d9534f;">🗑 Hapus Jadwal</button>
       </form>
 
       <div id="mqtt-status">🔄 Menghubungkan ke MQTT...</div>
@@ -203,24 +192,12 @@
           updateLampIcon(statusText);
         } else if (message.destinationName === expectedScheduleStatus) {
           const payload = message.payloadString;
-          const scheduleList = document.getElementById("schedule-list");
-          if (payload.startsWith("Error")) {
-            alert(payload);
-            return;
-          }
           if (payload === "Tidak Aktif") {
             document.getElementById("current-schedule").innerText = "⏳ Jadwal Aktif: Tidak ada";
-            scheduleList.innerHTML = "";
           } else {
-            const schedules = payload.replace("Aktif: ", "").split(";");
-            document.getElementById("current-schedule").innerText = `⏳ Jadwal Aktif: ${schedules.length} jadwal`;
-            scheduleList.innerHTML = "";
-            schedules.forEach(schedule => {
-              const [time, action] = schedule.split("=");
-              const li = document.createElement("li");
-              li.innerText = `${time} untuk ${action}`;
-              scheduleList.appendChild(li);
-            });
+            const [status, timeAction] = payload.split(": ");
+            const [time, action] = timeAction.split("=");
+            document.getElementById("current-schedule").innerText = `⏳ Jadwal Aktif: ${time} untuk ${action}`;
           }
         }
       };
@@ -348,7 +325,7 @@
 
     function clearSchedule() {
       if (!selectedDevice) return;
-      if (confirm("Yakin ingin menghapus semua jadwal?")) {
+      if (confirm("Yakin ingin menghapus jadwal?")) {
         sendMessage("schedule", "clear_schedule");
       }
     }
