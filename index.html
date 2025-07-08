@@ -42,6 +42,34 @@
       flex-wrap: wrap;
       gap: 1rem;
     }
+    .ad-banner {
+      display: none;
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .ad-banner.active {
+      display: block;
+    }
+    .voice-assistant-btn {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.6rem;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .voice-assistant-btn.active {
+      display: block;
+    }
+    .voice-assistant-btn:hover {
+      background: #45a049;
+    }
     label, select, input, button {
       display: block;
       width: 100%;
@@ -155,6 +183,7 @@
       <span id="account-type">Basic</span>
       <button id="upgrade-btn" onclick="window.location.href='upgrade.html'">Upgrade</button>
     </div>
+    <div id="ad-banner" class="ad-banner">Iklan: Coba Smartlamp Premium untuk fitur lebih! <a href="upgrade.html">Upgrade sekarang</a></div>
     <button onclick="window.location.href='device-setup.html'">➕ Tambah Perangkat</button>
 
     <label for="device-select">Pilih Perangkat:</label>
@@ -189,6 +218,7 @@
       </form>
 
       <div id="mqtt-status">🔄 Menghubungkan ke MQTT...</div>
+      <button id="voice-assistant-btn" class="voice-assistant-btn">🎙 Aktifkan Google Voice</button>
     </div>
   </main>
 
@@ -216,6 +246,7 @@
         // Format accountType dengan huruf kapital
         const formattedAccountType = accountType.charAt(0).toUpperCase() + accountType.slice(1).toLowerCase();
         document.getElementById("account-type").innerText = formattedAccountType;
+        updateFeaturesByAccountType();
         restrictFeaturesByAccountType();
         loadDevices();
       }).catch(e => {
@@ -223,6 +254,21 @@
         alert("Gagal memuat tipe akun.");
       });
     });
+
+    function updateFeaturesByAccountType() {
+      const adBanner = document.getElementById("ad-banner");
+      const voiceBtn = document.getElementById("voice-assistant-btn");
+      if (accountType === "basic") {
+        adBanner.classList.add("active");
+        voiceBtn.classList.remove("active");
+      } else if (accountType === "premium") {
+        adBanner.classList.remove("active");
+        voiceBtn.classList.add("active");
+      } else { // standard
+        adBanner.classList.remove("active");
+        voiceBtn.classList.remove("active");
+      }
+    }
 
     function restrictFeaturesByAccountType() {
       const deleteButtons = document.querySelectorAll("#schedule-list button");
@@ -505,6 +551,11 @@
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    // Fungsi dummy untuk Google Voice Assistant (ganti dengan integrasi API nanti)
+    document.getElementById("voice-assistant-btn").addEventListener("click", () => {
+      alert("Fitur Google Voice Assistant akan diaktifkan. (Prototipe) Hubungi admin untuk integrasi penuh.");
+    });
   </script>
 </body>
 </html>
