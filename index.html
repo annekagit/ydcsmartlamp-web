@@ -302,13 +302,14 @@
   </button>
 
   <div id="promo-modal" class="modal">
-    <div class="modal-content">
-      <button class="close-btn" onclick="closeModal()">&times;</button>
-      <h2>Promo Spesial!</h2>
-      <p>Upgrade ke akun Premium sekarang dan dapatkan fitur Google Voice Assistant + 10 jadwal tambahan! Hanya Rp 99.000/tahun.</p>
-      <button onclick="window.location.href='upgrade.html'">Upgrade Sekarang</button>
-    </div>
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">×</button>
+    <h2 id="promo-title"></h2>
+    <p id="promo-message"></p>
+    <img id="promo-image" alt="Promo Image" style="max-width: 100%; display: none;">
+    <button id="promo-button">Upgrade Sekarang</button>
   </div>
+</div>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -649,19 +650,54 @@
     });
 
     // Fungsi untuk menampilkan dan menutup modal
-    function showPromoModal() {
-      const modal = document.getElementById("promo-modal");
-      if (accountType === "basic" && !localStorage.getItem("promoShown")) {
-        modal.style.display = "flex";
-        setTimeout(closeModal, 5000);
-        localStorage.setItem("promoShown", "true"); // Hanya muncul sekali per sesi
+    function loadPromoData() {
+  fetch('promo.json')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Gagal memuat promo.json');
       }
-    }
+      return response.json();
+    })
+    .then(data => {
+      // Isi elemen dengan data dari JSON
+      document.getElementById('promo-title').innerText = data.title || 'Promo Spesial!';
+      document.getElementById('promo-message').innerText = data.message || 'Upgrade untuk fitur lebih!';
+      const promoButton = document.getElementById('promo-button');
+      promoButton.onclick = () => window.location.href = data.link || 'upgrade.html';
 
-    function closeModal() {
-      const modal = document.getElementById("promo-modal");
-      modal.style.display = "none";
-    }
+      // Handle gambar jika ada
+      const promoImage = document.getElementById('promo-image');
+      if (data.image) {
+        promoImage.src = data.image;
+        promoImage.style.display = 'block';
+      } else {
+        promoImage.style.display = 'none';
+      }
+    })
+    .catch(error => {
+      console.error('Error loading promo data:', error);
+      // Fallback konten jika gagal memuat
+      document.getElementById('promo-title').innerText = 'Promo Gagal Dimuat';
+      document.getElementById('promo-message').innerText = 'Silakan coba lagi nanti.';
+      document.getElementById('promo-button').style.display = 'none';
+      document.getElementById('promo-image').style.display = 'none';
+    });
+}
+
+function showPromoModal() {
+  const modal = document.getElementById("promo-modal");
+  if (accountType === "basic" && !localStorage.getItem("promoShown")) {
+    loadPromoData(); // Muat data sebelum menampilkan modal
+    modal.style.display = "flex";
+    setTimeout(closeModal, 5000); // Tutup setelah 5 detik
+    localStorage.setItem("promoShown", "true"); // Hanya muncul sekali per sesi
+  }
+}
+
+function closeModal() {
+  const modal = document.getElementById("promo-modal");
+  modal.style.display = "none";
+}
   </script>
 </body>
 </html>
