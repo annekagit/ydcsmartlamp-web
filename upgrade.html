@@ -43,6 +43,21 @@
       margin: 0.5rem 0;
       font-weight: bold;
     }
+    .original-price {
+      text-decoration: line-through;
+      color: #999;
+      font-size: 0.9rem;
+      font-weight: normal;
+    }
+    .promo-badge {
+      background-color: #ff4444;
+      color: white;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+      font-weight: bold;
+    }
     .features {
       font-size: 0.95rem;
       text-align: center;
@@ -94,21 +109,29 @@
 
     <div class="card">
       <h2>Standard</h2>
-      <div class="price">Rp50.000/tahun</div>
+      <div class="price">
+        <span class="original-price">Rp75.000/tahun</span><br>
+        Rp49.000/tahun <span class="promo-badge">PROMO</span>
+      </div>
       <div class="features">
         - Maks. 6 perangkat<br>
         - Maks. 4 Jadwal<br>
+        - Bebas Iklan<br>
         - Dukungan lebih baik
       </div>
-      <button onclick="upgrade('standard', 50000)">Upgrade</button>
+      <button onclick="upgrade('standard', 49000)">Upgrade</button>
     </div>
 
     <div class="card">
       <h2>Premium</h2>
-      <div class="price">Rp100.000/tahun</div>
+      <div class="price">
+        <span class="original-price">Rp150.000/tahun</span><br>
+        Rp99.000/tahun <span class="promo-badge">PROMO</span>
+      </div>
       <div class="features">
         - Google Voice Assistant<br> 
         - Perangkat tanpa batas<br>
+        - Bebas Iklan<br>
         - Semua fitur terbuka
       </div>
       <button onclick="upgrade('premium', 100000)">Upgrade</button>
