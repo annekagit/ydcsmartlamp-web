@@ -54,9 +54,10 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-  <script src="firebase-config.js"></script>
+  <script src="/firebase-config.js"></script> <!-- Sesuaikan path jika perlu -->
   <script>
     const storage = firebase.storage();
+    const db = firebase.database();
 
     function saveAd(type) {
       const uid = firebase.auth().currentUser ? firebase.auth().currentUser.uid : null;
@@ -92,7 +93,9 @@
         const uploadTask = storageRef.put(fileInput.files[0]);
 
         uploadTask.on('state_changed',
-          null,
+          (snapshot) => {
+            // Progress tracking (opsional)
+          },
           (error) => {
             console.error('Error uploading image:', error);
             alert('Gagal mengunggah gambar.');
@@ -123,7 +126,7 @@
     }
 
     function saveToDatabase(data, type, uid) {
-      const dbRef = firebase.database().ref(`ads/${type}/${uid}`);
+      const dbRef = db.ref(`ads/${type}/${uid}`);
       dbRef.set(data)
         .then(() => {
           alert(`Data iklan ${type} berhasil disimpan!`);
