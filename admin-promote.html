@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Promosikan Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #dbeeff, #ffffff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      color: #0077cc;
+    }
+    .status {
+      margin-top: 1.5rem;
+      font-weight: bold;
+    }
+    button {
+      background-color: #0077cc;
+      color: white;
+      padding: 0.75rem 1.2rem;
+      margin-top: 1.2rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+  </style>
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Promosikan Admin</h1>
+    <p>Halaman ini hanya dapat digunakan oleh <strong>annekaparfum@gmail.com</strong></p>
+    <button onclick="promote()">🚀 Jadikan Admin</button>
+    <div class="status" id="status">Menunggu tindakan...</div>
+  </div>
+
+  <script>
+    function promote() {
+      const statusEl = document.getElementById("status");
+
+      firebase.auth().onAuthStateChanged(user => {
+        if (!user) {
+          statusEl.innerText = "❌ Anda belum login.";
+          statusEl.style.color = "red";
+          return;
+        }
+
+        const email = user.email;
+        const uid = user.uid;
+
+        if (email !== "annekaparfum@gmail.com") {
+          statusEl.innerText = "❌ Akses ditolak. Email tidak diizinkan.";
+          statusEl.style.color = "red";
+          return;
+        }
+
+        const userRef = firebase.database().ref("users/" + uid);
+        userRef.update({ role: "admin" })
+          .then(() => {
+            statusEl.innerText = "✅ Anda sekarang adalah admin!";
+            statusEl.style.color = "green";
+          })
+          .catch(err => {
+            statusEl.innerText = "❌ Gagal mempromosikan: " + err.message;
+            statusEl.style.color = "red";
+          });
+      });
+    }
+  </script>
+</body>
+</html>
