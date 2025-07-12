@@ -82,7 +82,7 @@ firebase.auth().onAuthStateChanged(user=>{
     const lookupRef = firebase.database().ref("device_lookup/" + deviceID);
     lookupRef.once("value").then(lookupSnap => {
       if (lookupSnap.exists()) {
-        showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.", false);
+        showStatus("⚠️ Device ID ini sudah digunakan. Silahkan buat Device ID lain.", false);
         return;
       }
 
