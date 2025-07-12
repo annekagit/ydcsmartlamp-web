@@ -2,83 +2,25 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Login - YDC Smartlamp</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – YDC Smartlamp</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom right, #dbeeff, #ffffff);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-    h1 {
-      text-align: center;
-      color: #0077cc;
-    }
-    input {
-      width: 100%;
-      padding: 0.8rem;
-      margin-top: 1rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-    }
-    button {
-      width: 100%;
-      padding: 0.8rem;
-      margin-top: 1.2rem;
-      background-color: #0077cc;
-      color: white;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #005fa3;
-    }
-    .google-btn {
-      background-color: #ffffff;
-      color: #333;
-      border: 1px solid #ccc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .google-btn img {
-      height: 20px;
-      margin-right: 10px;
-    }
-    .status {
-      text-align: center;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-    .link {
-      text-align: center;
-      margin-top: 1rem;
-    }
-    .link a {
-      color: #0077cc;
-      text-decoration: none;
-    }
-    .link a:hover {
-      text-decoration: underline;
-    }
+    body{font-family:'Segoe UI',sans-serif;background:linear-gradient(to br,#dbeeff,#fff);display:flex;justify-content:center;align-items:center;height:100vh;margin:0}
+    .container{background:#fff;padding:2rem;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.1);max-width:400px;width:100%}
+    h1{text-align:center;color:#0077cc}
+    input,button{width:100%;padding:.8rem;border-radius:8px;font-size:1rem}
+    input{margin-top:1rem;border:1px solid #ccc}
+    button{margin-top:1.2rem;border:none;cursor:pointer;background:#0077cc;color:#fff}
+    button:hover{background:#005fa3}
+    .google-btn{background:#fff;color:#333;border:1px solid #ccc;display:flex;align-items:center;justify-content:center}
+    .google-btn img{height:20px;margin-right:10px}
+    .status{text-align:center;margin-top:1rem;font-weight:bold}
+    .link{text-align:center;margin-top:1rem}
+    .link a{color:#0077cc;text-decoration:none}
+    .link a:hover{text-decoration:underline}
   </style>
 
-  <!-- Firebase SDK v8 -->
+  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -87,135 +29,80 @@
 <body>
   <div class="container">
     <h1>Login</h1>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
-    <button onclick="loginManual()">🔐 Login</button>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="loginManual()">🔐 Login</button>
     <button class="google-btn" onclick="loginGoogle()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo">
-      Login dengan Google
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Login dengan Google
     </button>
-    <div class="link">
-      <a href="#" onclick="resetPassword()">🔁 Lupa Password?</a>
-    </div>
+    <div class="link"><a href="#" onclick="resetPassword()">🔁 Lupa Password?</a></div>
     <div class="status" id="status"></div>
-    <div class="link">
-      Belum punya akun? <a href="register.html">Daftar</a>
-    </div>
+    <div class="link">Belum punya akun? <a href="register.html">Daftar</a></div>
   </div>
 
   <script>
-    function writeUserData(user) {
+    /* Simpan / perbarui data user */
+    function writeUserData(user){
+      const ref = firebase.database().ref("users/"+user.uid);
       const now = Date.now();
-      const ref = firebase.database().ref("users/" + user.uid);
-
-      ref.once("value").then(snapshot => {
-        const exists = snapshot.exists();
-        const userData = {
+      ref.once("value").then(snap=>{
+        const exists = snap.exists();
+        const data = {
           uid: user.uid,
-          email: user.email,
-          role: exists ? snapshot.val().role : "user",
-          accountType: exists ? snapshot.val().accountType : "basic",
-          createdAt: exists ? snapshot.val().createdAt : now,
+          email: user.email || "",
           lastLogin: now
         };
-
-        if (!exists) {
-          ref.set(userData);
-        } else {
-          ref.update(userData);
-        }
-      }).catch(err => {
-        console.error("❌ Gagal menyimpan data user:", err.message);
-      });
+        if(!exists){ data.createdAt = now; }
+        // user sendiri selalu boleh update field ini
+        ref.update(data);
+      }).catch(err=>console.error("Save user err:",err));
     }
 
-    function loginManual() {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-      const status = document.getElementById("status");
+    /* Login Manual */
+    function loginManual(){
+      const email=document.getElementById("email").value.trim();
+      const pw=document.getElementById("password").value;
+      const st=document.getElementById("status");
+      if(!email||!pw){st.textContent="❗ Email dan password wajib diisi.";st.style.color="red";return;}
 
-      if (!email || !password) {
-        status.innerText = "❗ Email dan password wajib diisi.";
-        status.style.color = "red";
-        return;
-      }
-
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(result => {
-          writeUserData(result.user);
-          window.location.href = "index.html";
-        })
-        .catch(err => {
-          let message = "❌ Terjadi kesalahan.";
-          switch (err.code) {
-            case "auth/user-not-found":
-              message = "❌ Email belum terdaftar."; break;
-            case "auth/wrong-password":
-              message = "❌ Password salah."; break;
-            case "auth/invalid-email":
-              message = "❌ Format email tidak valid."; break;
-            case "auth/invalid-login-credentials":
-              message = "❌ Email atau password tidak valid."; break;
-            case "auth/too-many-requests":
-              message = "❌ Terlalu banyak percobaan login. Coba lagi nanti."; break;
-            case "auth/network-request-failed":
-              message = "❌ Koneksi jaringan bermasalah."; break;
-            case "auth/user-disabled":
-              message = "❌ Akun ini dinonaktifkan."; break;
-            default:
-              message = "❌ " + err.message;
-          }
-          status.innerText = message;
-          status.style.color = "red";
-        });
+      firebase.auth().signInWithEmailAndPassword(email,pw)
+        .then(cred=>{writeUserData(cred.user);location.href="index.html";})
+        .catch(err=>showErr(err,st));
     }
 
-    function loginGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider)
-        .then(result => {
-          writeUserData(result.user);
-          window.location.href = "index.html";
-        })
-        .catch(err => {
-          document.getElementById("status").innerText = "⚠️ Gagal login Google: " + err.message;
-          document.getElementById("status").style.color = "red";
-        });
+    /* Login Google */
+    function loginGoogle(){
+      firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+        .then(res=>{writeUserData(res.user);location.href="index.html";})
+        .catch(err=>{const s=document.getElementById("status");s.textContent="⚠️ "+err.message;s.style.color="red";});
     }
 
-    function resetPassword() {
-      const email = prompt("Masukkan email untuk reset password:");
-      const status = document.getElementById("status");
-
-      if (!email) {
-        status.innerText = "❗ Email tidak boleh kosong.";
-        status.style.color = "red";
-        return;
-      }
-
+    /* Reset Password */
+    function resetPassword(){
+      const email=prompt("Masukkan email untuk reset password:");
+      const st=document.getElementById("status");
+      if(!email){st.textContent="❗ Email tidak boleh kosong.";st.style.color="red";return;}
       firebase.auth().sendPasswordResetEmail(email)
-        .then(() => {
-          status.innerText = "📧 Email reset telah dikirim.";
-          status.style.color = "green";
-        })
-        .catch(err => {
-          let message = "❌ Gagal mengirim email reset.";
-          switch (err.code) {
-            case "auth/user-not-found":
-              message = "❌ Email tidak ditemukan."; break;
-            case "auth/invalid-email":
-              message = "❌ Format email tidak valid."; break;
-          }
-          status.innerText = message;
-          status.style.color = "red";
-        });
+        .then(()=>{st.textContent="📧 Email reset dikirim.";st.style.color="green";})
+        .catch(err=>{st.textContent="❌ "+err.message;st.style.color="red";});
     }
 
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        writeUserData(user);
-        window.location.href = "index.html";
-      }
+    function showErr(err,el){
+      const m={
+        "auth/user-not-found":"❌ Email belum terdaftar.",
+        "auth/wrong-password":"❌ Password salah.",
+        "auth/invalid-email":"❌ Format email tidak valid.",
+        "auth/too-many-requests":"❌ Terlalu banyak percobaan.",
+        "auth/user-disabled":"❌ Akun dinonaktifkan."
+      };
+      el.textContent=m[err.code]||"❌ "+err.message;
+      el.style.color="red";
+    }
+
+    /* Auto‑redirect jika sudah login */
+    firebase.auth().onAuthStateChanged(u=>{
+      if(u){writeUserData(u);location.href="index.html";}
     });
   </script>
 </body>
