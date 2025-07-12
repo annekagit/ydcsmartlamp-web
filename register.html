@@ -87,17 +87,17 @@
       const now = Date.now();
       ref.set({
         uid: user.uid,
-        email: user.email || "",
+        email: user.email,
         role: "user",
         accountType: "basic",
         createdAt: now,
         lastLogin: now
-      }).then(() => {
-        console.log("✅ Data pengguna berhasil disimpan.");
-      }).catch(err => {
-        console.error("❌ Gagal menyimpan user:", err.message);
       });
     }
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
 
     function register() {
       const email = document.getElementById("email").value.trim();
@@ -111,23 +111,18 @@
       }
 
       firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(() => {
+        .then(result => {
+          const user = result.user;
+          writeUserData(user);
           status.innerText = "✅ Berhasil mendaftar, mengalihkan...";
           status.style.color = "green";
-          // Tidak langsung redirect, tunggu auth state
+          setTimeout(() => window.location.href = "index.html", 1000);
         })
         .catch(err => {
           status.innerText = "❌ " + err.message;
           status.style.color = "red";
         });
     }
-
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        writeUserData(user); // ✅ Ini dipanggil hanya jika user aktif (login selesai)
-        window.location.href = "index.html";
-      }
-    });
   </script>
 </body>
 </html>
