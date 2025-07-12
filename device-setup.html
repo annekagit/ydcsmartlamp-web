@@ -49,58 +49,65 @@
       <a onclick="closeModal()" class="cancel-text">Batal</a>
     </div>
   </div>
-  <script>
-    const BASIC_LIMIT = 3;
-    function closeModal(){document.getElementById("upgradeModal").style.display="none";}
+<script>
+const BASIC_LIMIT = 3;
+function closeModal(){document.getElementById("upgradeModal").style.display="none";}
 
-    firebase.auth().onAuthStateChanged(user=>{
-      if(!user)return location.href="login.html";
+firebase.auth().onAuthStateChanged(user=>{
+  if(!user) return location.href="login.html";
 
-      const userRef = firebase.database().ref("users/"+user.uid);
-      const userDevicesRef = firebase.database().ref("devices/"+user.uid);
-      const deviceCountEl = document.getElementById("device-count");
-      let maxDevices=BASIC_LIMIT;
+  const userRef = firebase.database().ref("users/"+user.uid);
+  const userDevicesRef = firebase.database().ref("devices/"+user.uid);
+  const deviceCountEl = document.getElementById("device-count");
+  let maxDevices = BASIC_LIMIT;
 
-      userRef.on("value",snap=>{
-        const type=snap.val()?.accountType||"basic";
-        maxDevices = (type==="standard")?6:(type==="premium"?Infinity:BASIC_LIMIT);
-        userDevicesRef.on("value",dSnap=>{
-          const cnt=dSnap.numChildren();
-          deviceCountEl.innerText = (maxDevices===Infinity)
-            ?`Anda telah menambahkan ${cnt} perangkat (tanpa batas).`
-            :`Anda telah menambahkan ${cnt} dari ${maxDevices} perangkat.`;
-        });
-      });
+  userRef.on("value", snap => {
+    const type = snap.val()?.accountType || "basic";
+    maxDevices = type === "standard" ? 6 : type === "premium" ? Infinity : BASIC_LIMIT;
 
-      document.getElementById("submit").addEventListener("click",()=>{
-        const deviceID=document.getElementById("device-id").value.trim();
-        const deviceName=document.getElementById("device-name").value.trim();
-        if(!deviceID||!deviceName){showStatus("❌ ID dan Nama harus diisi.",false);return;}
-
-        firebase.database().ref("devices").once("value").then(allSnap=>{
-          let taken=false;
-          allSnap.forEach(uSnap=>{
-            const devices = uSnap.val();
-            if(devices && Object.keys(devices).includes(deviceID)){
-              taken = true;
-            }
-          });
-          if(taken){showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.",false);return;}
-
-          userDevicesRef.once("value").then(snap=>{
-            const count=snap.numChildren();
-            if(count>=maxDevices){showUpgradeModal();return;}
-
-            userDevicesRef.child(deviceID).set({name:deviceName})
-              .then(()=>showStatus("✅ Perangkat berhasil disimpan.",true))
-              .catch(err=>showStatus("❌ Gagal menyimpan: "+err.message,false));
-          });
-        });
-      });
-
-      function showStatus(msg,success){const el=document.getElementById("status");el.innerText=msg;el.style.color=success?"green":"red";}
-      function showUpgradeModal(){document.getElementById("upgradeModal").style.display="flex";}
+    userDevicesRef.on("value", dSnap => {
+      const cnt = dSnap.numChildren();
+      deviceCountEl.innerText = maxDevices === Infinity
+        ? `Anda telah menambahkan ${cnt} perangkat (tanpa batas).`
+        : `Anda telah menambahkan ${cnt} dari ${maxDevices} perangkat.`;
     });
-  </script>
+  });
+
+  document.getElementById("submit").addEventListener("click", () => {
+    const deviceID = document.getElementById("device-id").value.trim();
+    const deviceName = document.getElementById("device-name").value.trim();
+    if(!deviceID || !deviceName){showStatus("❌ ID dan Nama harus diisi.", false);return;}
+
+    // Cek global lewat node device_lookup
+    const lookupRef = firebase.database().ref("device_lookup/" + deviceID);
+    lookupRef.once("value").then(lookupSnap => {
+      if (lookupSnap.exists()) {
+        showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.", false);
+        return;
+      }
+
+      // Cek batas perangkat user
+      userDevicesRef.once("value").then(snap => {
+        if (snap.numChildren() >= maxDevices) { showUpgradeModal(); return; }
+
+        // Multi-location update: devices/<uid>/<deviceID>  DAN  device_lookup/<deviceID>
+        const updates = {};
+        updates[`devices/${user.uid}/${deviceID}`] = { name: deviceName };
+        updates[`device_lookup/${deviceID}`] = user.uid;
+
+        firebase.database().ref().update(updates)
+          .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
+          .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
+      });
+    });
+  });
+
+  function showStatus(msg, success){
+    const el = document.getElementById("status");
+    el.innerText = msg; el.style.color = success ? "green" : "red";
+  }
+  function showUpgradeModal(){ document.getElementById("upgradeModal").style.display="flex"; }
+});
+</script>
 </body>
 </html>
