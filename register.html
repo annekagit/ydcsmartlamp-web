@@ -82,18 +82,20 @@
   </div>
 
   <script>
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) window.location.href = "index.html";
-    });
-
     function writeUserData(user) {
       const ref = firebase.database().ref("users/" + user.uid);
       const now = Date.now();
       ref.set({
         uid: user.uid,
         email: user.email || "",
+        role: "user",
+        accountType: "basic",
         createdAt: now,
         lastLogin: now
+      }).then(() => {
+        console.log("✅ User berhasil ditulis ke database.");
+      }).catch((error) => {
+        console.error("❌ Gagal menulis user:", error);
       });
     }
 
@@ -111,7 +113,7 @@
       firebase.auth().createUserWithEmailAndPassword(email, password)
         .then(result => {
           const user = result.user;
-          writeUserData(user);
+          writeUserData(user); // ✅ Tambahkan ini
           status.innerText = "✅ Berhasil mendaftar, mengalihkan...";
           status.style.color = "green";
           setTimeout(() => window.location.href = "index.html", 1000);
@@ -121,6 +123,10 @@
           status.style.color = "red";
         });
     }
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) window.location.href = "index.html";
+    });
   </script>
 </body>
 </html>
