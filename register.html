@@ -66,6 +66,7 @@
   <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase-config.js"></script>
 </head>
 <body>
@@ -85,6 +86,17 @@
       if (user) window.location.href = "index.html";
     });
 
+    function writeUserData(user) {
+      const ref = firebase.database().ref("users/" + user.uid);
+      const now = Date.now();
+      ref.set({
+        uid: user.uid,
+        email: user.email || "",
+        createdAt: now,
+        lastLogin: now
+      });
+    }
+
     function register() {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
@@ -97,7 +109,9 @@
       }
 
       firebase.auth().createUserWithEmailAndPassword(email, password)
-        .then(() => {
+        .then(result => {
+          const user = result.user;
+          writeUserData(user);
           status.innerText = "✅ Berhasil mendaftar, mengalihkan...";
           status.style.color = "green";
           setTimeout(() => window.location.href = "index.html", 1000);
