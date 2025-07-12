@@ -77,27 +77,20 @@
         const deviceName=document.getElementById("device-name").value.trim();
         if(!deviceID||!deviceName){showStatus("❌ ID dan Nama harus diisi.",false);return;}
 
-        // 1️⃣ Cek global: apakah deviceID sudah pernah dipakai?
-        firebase.database().ref("devices").once("value").then(allSnap => {
-  let alreadyUsed = false;
-  allSnap.forEach(userSnap => {
-    const devices = userSnap.val();
-    if (devices && Object.keys(devices).includes(deviceID)) {
-      alreadyUsed = true;
-    }
-  });
+        firebase.database().ref("devices").once("value").then(allSnap=>{
+          let taken=false;
+          allSnap.forEach(uSnap=>{
+            const devices = uSnap.val();
+            if(devices && Object.keys(devices).includes(deviceID)){
+              taken = true;
+            }
+          });
+          if(taken){showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.",false);return;}
 
-  if (alreadyUsed) {
-    showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.", false);
-    return;
-  }
-
-          // 2️⃣ Cek batas perangkat user
           userDevicesRef.once("value").then(snap=>{
             const count=snap.numChildren();
             if(count>=maxDevices){showUpgradeModal();return;}
 
-            // 3️⃣ Simpan perangkat
             userDevicesRef.child(deviceID).set({name:deviceName})
               .then(()=>showStatus("✅ Perangkat berhasil disimpan.",true))
               .catch(err=>showStatus("❌ Gagal menyimpan: "+err.message,false));
