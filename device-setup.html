@@ -5,136 +5,24 @@
   <title>Setup Perangkat - YDC Smartlamp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #d0e6ff, #f3faff);
-      padding: 2rem;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .container {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
-      position: relative;
-      z-index: 1;
-    }
-    h1 {
-      color: #0077cc;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    label {
-      font-weight: bold;
-      margin-top: 1rem;
-      display: block;
-    }
-    input {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.25rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-    button {
-      background-color: #0077cc;
-      color: white;
-      padding: 0.75rem;
-      margin-top: 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      width: 100%;
-      transition: background-color 0.2s;
-    }
-    button:hover {
-      background-color: #005fa3;
-    }
-    #status, #device-count {
-      margin-top: 1rem;
-      text-align: center;
-      font-weight: bold;
-    }
-    #device-count {
-      color: #555;
-      font-size: 0.95rem;
-    }
-    #upgradeModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      backdrop-filter: blur(6px);
-      background-color: rgba(0, 0, 0, 0.4);
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 16px;
-      max-width: 360px;
-      width: 90%;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      text-align: center;
-      transform: translateY(30px);
-      animation: slideUp 0.4s ease forwards;
-    }
-    .modal-content h2 {
-      color: #0077cc;
-      margin-bottom: 0.8rem;
-    }
-    .modal-content p {
-      font-size: 0.95rem;
-      color: #333;
-    }
-    .modal-content button {
-      background-color: #0077cc;
-      color: white;
-      padding: 0.75rem 1.5rem;
-      margin-top: 1rem;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    .modal-content a {
-      display: inline-block;
-      margin-top: 0.8rem;
-      color: #0077cc;
-      text-decoration: underline;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes slideUp {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    .cancel-text {
-      display: inline-block;
-      margin-top: 1rem;
-      color: #666;
-      cursor: pointer;
-      font-size: 0.9rem;
-      text-decoration: underline;
-    }
-    .cancel-text:hover {
-      color: #000;
-    }
+    body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#d0e6ff,#f3faff);padding:2rem;margin:0;display:flex;justify-content:center;align-items:center;height:100vh}
+    .container{background:#fff;padding:2rem;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.1);max-width:400px;width:100%;position:relative;z-index:1}
+    h1{color:#0077cc;margin-bottom:1rem;text-align:center}
+    label{font-weight:bold;margin-top:1rem;display:block}
+    input{width:100%;padding:.75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:8px;font-size:1rem}
+    button{background:#0077cc;color:#fff;padding:.75rem;margin-top:1.5rem;border:none;border-radius:8px;font-size:1rem;cursor:pointer;width:100%;transition:background-color .2s}
+    button:hover{background:#005fa3}
+    #status,#device-count{margin-top:1rem;text-align:center;font-weight:bold}
+    #device-count{color:#555;font-size:.95rem}
+    #upgradeModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;backdrop-filter:blur(6px);background:rgba(0,0,0,.4);justify-content:center;align-items:center;z-index:999;animation:fadeIn .3s ease-in-out}
+    .modal-content{background:#fff;padding:2rem;border-radius:16px;max-width:360px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,.2);text-align:center;transform:translateY(30px);animation:slideUp .4s ease forwards}
+    .modal-content h2{color:#0077cc;margin-bottom:.8rem}
+    .modal-content p{font-size:.95rem;color:#333}
+    .modal-content button{background:#0077cc;color:#fff;padding:.75rem 1.5rem;margin-top:1rem;border:none;border-radius:8px;font-size:1rem;cursor:pointer}
+    .modal-content a{display:inline-block;margin-top:.8rem;color:#0077cc;text-decoration:underline;font-size:.9rem;cursor:pointer}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes slideUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .cancel-text{display:inline-block;margin-top:1rem;color:#666;cursor:pointer;font-size:.9rem;text-decoration:underline}.cancel-text:hover{color:#000}
   </style>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -143,7 +31,7 @@
 </head>
 <body>
   <div class="container">
-    <a href="index.html" style="position:left; top:16px; text-decoration:none; color:#0077cc; font-size:0.9rem;">← Kembali</a>
+    <a href="index.html" style="position:left;top:16px;text-decoration:none;color:#0077cc;font-size:.9rem">← Kembali</a>
     <h1>🔧 Tambah Perangkat</h1>
     <div id="device-count">Memuat data perangkat...</div>
     <label for="device-id">Device ID (cth: abc123):</label>
@@ -157,78 +45,59 @@
     <div class="modal-content">
       <h2>Upgrade Akun 📈</h2>
       <p>Batas maksimal perangkat (3 unit) telah tercapai.<br>Untuk menambahkan lebih banyak perangkat, silakan upgrade akun Anda.</p>
-      <button onclick="window.location.href='upgrade.html'">🔓 Upgrade Sekarang</button>
-      <br>
+      <button onclick="window.location.href='upgrade.html'">🔓 Upgrade Sekarang</button><br>
       <a onclick="closeModal()" class="cancel-text">Batal</a>
     </div>
   </div>
   <script>
     const BASIC_LIMIT = 3;
-    function closeModal() {
-      document.getElementById("upgradeModal").style.display = "none";
-    }
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (!user) return window.location.href = "login.html";
+    function closeModal(){document.getElementById("upgradeModal").style.display="none";}
 
-      const userRef = firebase.database().ref("users/" + user.uid);
-      const userDevicesRef = firebase.database().ref("devices/" + user.uid);
+    firebase.auth().onAuthStateChanged(user=>{
+      if(!user)return location.href="login.html";
+
+      const userRef = firebase.database().ref("users/"+user.uid);
+      const userDevicesRef = firebase.database().ref("devices/"+user.uid);
       const deviceCountEl = document.getElementById("device-count");
+      let maxDevices=BASIC_LIMIT;
 
-      let maxDevices = BASIC_LIMIT;
-
-      userRef.on("value", snapshot => {
-        const accountType = snapshot.val()?.accountType || "basic";
-        if (accountType === "standard") maxDevices = 6;
-        else if (accountType === "premium") maxDevices = Infinity;
-
-        userDevicesRef.on("value", function(devSnap) {
-          const count = devSnap.numChildren();
-          const text = (maxDevices === Infinity)
-            ? `Anda telah menambahkan ${count} perangkat (tanpa batas).`
-            : `Anda telah menambahkan ${count} dari ${maxDevices} perangkat.`;
-          deviceCountEl.innerText = text;
+      userRef.on("value",snap=>{
+        const type=snap.val()?.accountType||"basic";
+        maxDevices = (type==="standard")?6:(type==="premium"?Infinity:BASIC_LIMIT);
+        userDevicesRef.on("value",dSnap=>{
+          const cnt=dSnap.numChildren();
+          deviceCountEl.innerText = (maxDevices===Infinity)
+            ?`Anda telah menambahkan ${cnt} perangkat (tanpa batas).`
+            :`Anda telah menambahkan ${cnt} dari ${maxDevices} perangkat.`;
         });
       });
 
-      document.getElementById("submit").addEventListener("click", function () {
-        const deviceID = document.getElementById("device-id").value.trim();
-        const deviceName = document.getElementById("device-name").value.trim();
-        const statusEl = document.getElementById("status");
+      document.getElementById("submit").addEventListener("click",()=>{
+        const deviceID=document.getElementById("device-id").value.trim();
+        const deviceName=document.getElementById("device-name").value.trim();
+        if(!deviceID||!deviceName){showStatus("❌ ID dan Nama harus diisi.",false);return;}
 
-        if (!deviceID || !deviceName) {
-          showStatus("❌ ID dan Nama harus diisi.", false);
-          return;
-        }
+        // 1️⃣ Cek global: apakah deviceID sudah pernah dipakai?
+        firebase.database().ref("devices").once("value").then(allSnap=>{
+          let taken=false;
+          allSnap.forEach(uSnap=>{if(uSnap.hasChild(deviceID)){taken=true;return true;}});
+          if(taken){showStatus("⚠️ Device ID ini sudah digunakan oleh akun lain.",false);return;}
 
-        userDevicesRef.once("value").then(function (snapshot) {
-          const count = snapshot.numChildren();
-          if (count >= maxDevices) {
-            showUpgradeModal();
-            return;
-          }
+          // 2️⃣ Cek batas perangkat user
+          userDevicesRef.once("value").then(snap=>{
+            const count=snap.numChildren();
+            if(count>=maxDevices){showUpgradeModal();return;}
 
-          const deviceRef = userDevicesRef.child(deviceID);
-          deviceRef.once("value").then(function (deviceSnap) {
-            if (deviceSnap.exists()) {
-              showStatus("⚠️ Device ID sudah ada di akun Anda.", false);
-            } else {
-              deviceRef.set({ name: deviceName })
-                .then(() => showStatus("✅ Perangkat berhasil disimpan.", true))
-                .catch(err => showStatus("❌ Gagal menyimpan: " + err.message, false));
-            }
+            // 3️⃣ Simpan perangkat
+            userDevicesRef.child(deviceID).set({name:deviceName})
+              .then(()=>showStatus("✅ Perangkat berhasil disimpan.",true))
+              .catch(err=>showStatus("❌ Gagal menyimpan: "+err.message,false));
           });
         });
       });
 
-      function showStatus(msg, success) {
-        const el = document.getElementById("status");
-        el.innerText = msg;
-        el.style.color = success ? "green" : "red";
-      }
-
-      function showUpgradeModal() {
-        document.getElementById("upgradeModal").style.display = "flex";
-      }
+      function showStatus(msg,success){const el=document.getElementById("status");el.innerText=msg;el.style.color=success?"green":"red";}
+      function showUpgradeModal(){document.getElementById("upgradeModal").style.display="flex";}
     });
   </script>
 </body>
